@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS "agmast" (
+    "_id"           SERIAL PRIMARY KEY,
+    "initial"       VARCHAR(5),
+    "agcode"        VARCHAR(10),
+    "name"          VARCHAR(100),
+    "dob"           TIMESTAMP,
+    "address"       VARCHAR(200),
+    "marriagedate"  TIMESTAMP,
+    "brn"           VARCHAR(20),
+    "ag_since"      TIMESTAMP,
+    "club"          VARCHAR(10),
+    "ren_dt"        TIMESTAMP,
+    "licence_no"    VARCHAR(20),
+    "terminated"    BOOLEAN,
+    "qualification" VARCHAR(50),
+    "nominee"       VARCHAR(100),
+    "remark"        VARCHAR(200),
+    "email"         VARCHAR(100),
+    "mobile"        VARCHAR(100),
+    "last_updated"  TIMESTAMP,
+    "last_download" TIMESTAMP,
+    "photo"         TEXT
+);

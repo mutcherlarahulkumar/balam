@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS "genins" (
+    "_id"           SERIAL PRIMARY KEY,
+    "name"          VARCHAR(150),
+    "address"       TEXT,
+    "telno"         VARCHAR(100),
+    "insutype"      VARCHAR(100),
+    "vname"         VARCHAR(50),
+    "regno"         VARCHAR(50),
+    "modelno"       VARCHAR(50),
+    "model"         VARCHAR(50),
+    "policyname"    VARCHAR(80),
+    "sa"            DOUBLE PRECISION,
+    "premium"       DOUBLE PRECISION,
+    "sertax"        DOUBLE PRECISION,
+    "netpremium"    DOUBLE PRECISION,
+    "comm"          DOUBLE PRECISION,
+    "doi"           TIMESTAMP,
+    "dom"           TIMESTAMP,
+    "ncb"           INTEGER,
+    "othdet"        VARCHAR(250),
+    "familycode"    VARCHAR(15),
+    "perscode"      VARCHAR(15)
+);
+
+CREATE TABLE IF NOT EXISTS "otherins" (
+    "_id"           SERIAL PRIMARY KEY,
+    "familycode"    VARCHAR(15),
+    "perscode"      VARCHAR(15),
+    "name"          VARCHAR(50),
+    "address"       VARCHAR(150),
+    "telno"         VARCHAR(20),
+    "noname"        VARCHAR(80),
+    "compname"      VARCHAR(80),
+    "i_type"        VARCHAR(20),
+    "fdno"          VARCHAR(50),
+    "dod"           TIMESTAMP,
+    "term"          VARCHAR(5),
+    "dom"           TIMESTAMP,
+    "amtdep"        VARCHAR(20),
+    "matamt"        VARCHAR(20),
+    "othdet"        VARCHAR(100)
+);

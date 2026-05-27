@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS "otherins";
+DROP TABLE IF EXISTS "genins";
