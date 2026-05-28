@@ -29,6 +29,9 @@ func main() {
 		log.Fatalf("migrations failed: %v", err)
 	}
 
+	// Wire encryption for sensitive bank-detail fields (aadhar, pan, ckyc)
+	repository.InitCrypto(domain.Encrypt, domain.Decrypt)
+
 	// Repositories
 	agentRepo := repository.NewAgentRepo(database)
 	familyRepo := repository.NewFamilyRepo(database)
@@ -48,7 +51,7 @@ func main() {
 	familySvc := domain.NewFamilyService(familyRepo, clientRepo, policyRepo)
 	clientSvc := domain.NewClientService(clientRepo, familyRepo, policyRepo)
 	planSvc := domain.NewPlanService(planRepo)
-	policySvc := domain.NewPolicyService(policyRepo, planRepo, fupRepo, loanRepo, sbRepo)
+	policySvc := domain.NewPolicyService(policyRepo, planRepo, fupRepo, loanRepo, sbRepo, clientRepo)
 	fupSvc := domain.NewFUPService(fupRepo, policyRepo)
 	commSvc := domain.NewCommissionService(commRepo, policyRepo)
 	gstSvc := domain.NewGSTService(policyRepo, planRepo)

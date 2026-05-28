@@ -15,14 +15,32 @@ type PolicyService struct {
 	fupRepo    *repository.FUPRepo
 	loanRepo   *repository.LoanRepo
 	sbRepo     *repository.SBRepo
+	clientRepo *repository.ClientRepo
 }
 
 // NewPolicyService creates a new PolicyService.
-func NewPolicyService(pr *repository.PolicyRepo, planR *repository.PlanRepo, fr *repository.FUPRepo, lr *repository.LoanRepo, sbR *repository.SBRepo) *PolicyService {
-	return &PolicyService{policyRepo: pr, planRepo: planR, fupRepo: fr, loanRepo: lr, sbRepo: sbR}
+func NewPolicyService(
+	pr *repository.PolicyRepo,
+	planR *repository.PlanRepo,
+	fr *repository.FUPRepo,
+	lr *repository.LoanRepo,
+	sbR *repository.SBRepo,
+	cr *repository.ClientRepo,
+) *PolicyService {
+	return &PolicyService{
+		policyRepo: pr,
+		planRepo:   planR,
+		fupRepo:    fr,
+		loanRepo:   lr,
+		sbRepo:     sbR,
+		clientRepo: cr,
+	}
 }
 
 // List returns paginated policies with filters.
+// TODO(LIC-API — Phase 2): Sync all policies from GET /api/v2/policies/list on login.
+// New policies sold via ANANDA portal arrive via POST /api/v2/newbusiness/update.
+// velead_id links to ANANDA campaign lead; custid links to LIC customer portal ID.
 func (s *PolicyService) List(status, familyCode string, dueThisMonth bool, lapsingIn, page, limit int) ([]models.PolicyListItem, int, error) {
 	if page < 1 {
 		page = 1
@@ -57,29 +75,21 @@ func (s *PolicyService) GetByNo(policyNo int) (*models.PolicyDetail, error) {
 		return nil, err
 	}
 
-	sbs, err := s.sbRepo.List("", false)
+	sbs, err := s.sbRepo.ListByPolicy(policyNo)
 	if err != nil {
 		return nil, err
-	}
-	var policySBs []models.SB
-	for _, sb := range sbs {
-		if sb.PolicyNo == policyNo {
-			policySBs = append(policySBs, sb)
-		}
-	}
-	if policySBs == nil {
-		policySBs = []models.SB{}
 	}
 
 	return &models.PolicyDetail{
 		Policy:     *policy,
 		FUPHistory: history,
 		Loans:      loans,
-		SBRecords:  policySBs,
+		SBRecords:  sbs,
 	}, nil
 }
 
 // Create creates a new policy, validating no duplicate policy number.
+// Computes `age` from the linked client's date of birth at issue date.
 func (s *PolicyService) Create(req models.CreatePolicyRequest) error {
 	exists, err := s.policyRepo.Exists(req.PolicyNo)
 	if err != nil {
@@ -107,10 +117,19 @@ func (s *PolicyService) Create(req models.CreatePolicyRequest) error {
 		return errors.New("invalid_next_premium")
 	}
 
-	return s.policyRepo.Create(req, plan.PlanName, issueDate, matDate, nextPremium)
+	// Compute age from client DOB at issue date
+	age := 0
+	client, err := s.clientRepo.FindByFamilyAndPers(req.FamilyCode, req.PersCode)
+	if err == nil && client.DOB != nil {
+		age = ageAt(*client.DOB, issueDate)
+	}
+
+	return s.policyRepo.Create(req, plan.PlanName, issueDate, matDate, nextPremium, age)
 }
 
 // Update applies selective updates to a policy.
+// TODO(LIC-API — Phase 2): Status (stat_cd, status) should be refreshed from
+// GET /api/v2/policies/status?policyNo=:policyNo on each sync.
 func (s *PolicyService) Update(policyNo int, req models.UpdatePolicyRequest) (*models.Policy, error) {
 	if _, err := s.policyRepo.FindByNo(policyNo); err != nil {
 		return nil, errors.New("policy_not_found")
@@ -129,4 +148,17 @@ func (s *PolicyService) Update(policyNo int, req models.UpdatePolicyRequest) (*m
 		return nil, err
 	}
 	return s.policyRepo.FindByNo(policyNo)
+}
+
+// ageAt returns the age in whole years of someone born on dob, measured at referenceDate.
+func ageAt(dob, referenceDate time.Time) int {
+	years := referenceDate.Year() - dob.Year()
+	// Haven't had their birthday yet this year
+	if referenceDate.YearDay() < dob.YearDay() {
+		years--
+	}
+	if years < 0 {
+		return 0
+	}
+	return years
 }

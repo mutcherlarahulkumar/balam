@@ -78,7 +78,7 @@ type CreatePolicyRequest struct {
 
 // UpdatePolicyRequest holds data for PUT /policies/:policyNo.
 type UpdatePolicyRequest struct {
-	Status      string `json:"status"      binding:"omitempty,oneof=IF LA PU SU MA"`
+	Status      string `json:"status"      binding:"omitempty,oneof=IF LA PU SU MA CL EX"`
 	Nominee     string `json:"nominee"     binding:"omitempty,max=80"`
 	Relation    string `json:"relation"    binding:"omitempty,max=20"`
 	NEFT        string `json:"neft"        binding:"omitempty,oneof=YES NO"`
