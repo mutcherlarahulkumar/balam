@@ -26,6 +26,17 @@ type FUPDueItem struct {
 	DaysUntilLapse int        `json:"daysUntilLapse"`
 }
 
+// MultipleDue represents one row from the multipledue (arrears) table.
+type MultipleDue struct {
+	ID         int        `db:"_id"         json:"id"`
+	PolicyNo   int        `db:"policy_no"   json:"policyNo"`
+	DueDate    *time.Time `db:"duedate"     json:"dueDate"`
+	InstNo     int        `db:"inst_no"     json:"instNo"`
+	IntAmt     float64    `db:"int_amt"     json:"intAmt"`
+	ValidUpto  *time.Time `db:"valid_upto"  json:"validUpto"`
+	TotalAmt   float64    `db:"total_amt"   json:"totalAmt"`
+}
+
 // UpdateFUPRequest holds data for POST /fup/update.
 type UpdateFUPRequest struct {
 	PolicyNo int    `json:"policyNo" binding:"required"`

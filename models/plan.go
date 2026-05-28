@@ -12,17 +12,22 @@ type Plan struct {
 	LapsDays int    `db:"lapsdays"  json:"lapsDays"`
 }
 
+// SBScheduleEntry represents a single survival benefit payment in a money-back plan.
+type SBScheduleEntry struct {
+	Year        int     `json:"year"`
+	BenefitPct  float64 `json:"benefitPct"`
+}
+
 // PlanResponse is the API response shape for a plan.
 type PlanResponse struct {
-	PlanNo    string   `json:"planNo"`
-	PlanName  string   `json:"planName"`
-	PlanType  string   `json:"planType"`
-	TermPPT   bool     `json:"termPpt"`
-	SBYears   *string  `json:"sbYears"`
-	SBBenefits *string `json:"sbBenefits"`
-	Stax      string   `json:"stax"`
-	LapsDays  int      `json:"lapsDays"`
-	GSTRates  GSTInfo  `json:"gstRates"`
+	PlanNo     string            `json:"planNo"`
+	PlanName   string            `json:"planName"`
+	PlanType   string            `json:"planType"`
+	TermPPT    bool              `json:"termPpt"`
+	SBSchedule []SBScheduleEntry `json:"sbSchedule"`
+	Stax       string            `json:"stax"`
+	LapsDays   int               `json:"lapsDays"`
+	GSTRates   GSTInfo           `json:"gstRates"`
 }
 
 // GSTInfo holds the current GST rate metadata returned with plans.

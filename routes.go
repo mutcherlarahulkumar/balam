@@ -87,6 +87,7 @@ func PrepareRoutes(
 		fup.GET("/due", fupH.Due)
 		fup.POST("/update", fupH.Update)
 		fup.GET("/history/:policyNo", fupH.History)
+		fup.GET("/multipledue/:policyNo", fupH.MultipleDues)
 	}
 
 	// Commission

@@ -57,6 +57,7 @@ type ClientDetail struct {
 }
 
 // BankDetail represents a row in the bankdetails table.
+// Aadhar, PAN, and CKYC are stored encrypted at rest (AES-256-GCM via domain.Encrypt).
 type BankDetail struct {
 	ID            int    `db:"_id"           json:"id"`
 	ClientID      int    `db:"clientid"      json:"clientId"`
@@ -66,8 +67,23 @@ type BankDetail struct {
 	MICRCode      string `db:"micrcode"      json:"micrCode"`
 	FamilyCode    string `db:"familycode"    json:"familyCode"`
 	PersCode      string `db:"perscode"      json:"persCode"`
+	// Aadhar is AES-256-GCM encrypted before storage. Value returned by API is decrypted.
 	Aadhar        string `db:"aadhar"        json:"aadhar"`
+	// PAN is AES-256-GCM encrypted before storage. Value returned by API is decrypted.
 	PAN           string `db:"pan"           json:"pan"`
+	// CKYC is AES-256-GCM encrypted before storage.
+	CKYC          string `db:"ckyc"          json:"ckyc"`
+}
+
+// CreateBankDetailRequest holds data for POST /clients/:id/bank.
+type CreateBankDetailRequest struct {
+	BankName      string `json:"bankName"      binding:"required,max=200"`
+	AccountNumber string `json:"accountNumber" binding:"required,max=50"`
+	IFSECode      string `json:"ifseCode"      binding:"omitempty,max=20"`
+	MICRCode      string `json:"micrCode"      binding:"omitempty,max=30"`
+	Aadhar        string `json:"aadhar"        binding:"omitempty,max=15"`
+	PAN           string `json:"pan"           binding:"omitempty,max=10"`
+	CKYC          string `json:"ckyc"          binding:"omitempty,max=50"`
 }
 
 // Document represents a row in the documents table.

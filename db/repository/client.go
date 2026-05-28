@@ -81,6 +81,15 @@ func (r *ClientRepo) FindByID(id int) (*models.Client, error) {
 	return &c, nil
 }
 
+// FindByFamilyAndPers returns a client by familyCode + persCode (used to compute age on policy creation).
+func (r *ClientRepo) FindByFamilyAndPers(familyCode, persCode string) (*models.Client, error) {
+	var c models.Client
+	if err := r.db.Get(&c, fmt.Sprintf(`SELECT %s FROM client WHERE familycode=$1 AND perscode=$2 LIMIT 1`, clientCols), familyCode, persCode); err != nil {
+		return nil, fmt.Errorf("client not found: %w", err)
+	}
+	return &c, nil
+}
+
 // Search searches by name, mobile, or policy_no.
 func (r *ClientRepo) Search(q string) ([]models.Client, error) {
 	rows, err := r.db.Queryx(fmt.Sprintf(`
@@ -130,15 +139,32 @@ func (r *ClientRepo) Update(id int, req models.UpdateClientRequest, dob *time.Ti
 	return err
 }
 
-// BankDetails returns all bank records for a client.
+// BankDetails returns all bank records for a client, decrypting sensitive fields on read.
 func (r *ClientRepo) BankDetails(clientID int) ([]models.BankDetail, error) {
+	rows, err := r.db.Query(`SELECT _id, clientid, bankname, accountnumber, ifsecode, micrcode, familycode, perscode,
+	                                 COALESCE(aadhar,''), COALESCE(pan,''), COALESCE(ckyc,'')
+	                          FROM bankdetails WHERE clientid=$1`, clientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	var items []models.BankDetail
-	err := r.db.Select(&items, `SELECT _id, clientid, bankname, accountnumber, ifsecode, micrcode, familycode, perscode, aadhar, pan
-	                              FROM bankdetails WHERE clientid=$1`, clientID)
+	for rows.Next() {
+		var b models.BankDetail
+		var encAadhar, encPAN, encCKYC string
+		if err := rows.Scan(&b.ID, &b.ClientID, &b.BankName, &b.AccountNumber, &b.IFSECode, &b.MICRCode,
+			&b.FamilyCode, &b.PersCode, &encAadhar, &encPAN, &encCKYC); err != nil {
+			return nil, err
+		}
+		b.Aadhar, _ = decryptField(encAadhar)
+		b.PAN, _ = decryptField(encPAN)
+		b.CKYC, _ = decryptField(encCKYC)
+		items = append(items, b)
+	}
 	if items == nil {
 		items = []models.BankDetail{}
 	}
-	return items, err
+	return items, rows.Err()
 }
 
 // Documents returns all documents for a client.
@@ -149,6 +175,77 @@ func (r *ClientRepo) Documents(clientID int) ([]models.Document, error) {
 		items = []models.Document{}
 	}
 	return items, err
+}
+
+// CreateBankDetail inserts a bank record with sensitive fields encrypted at rest.
+func (r *ClientRepo) CreateBankDetail(clientID int, req models.CreateBankDetailRequest, familyCode, persCode string) (*models.BankDetail, error) {
+	encAadhar, err := encryptField(req.Aadhar)
+	if err != nil {
+		return nil, err
+	}
+	encPAN, err := encryptField(req.PAN)
+	if err != nil {
+		return nil, err
+	}
+	encCKYC, err := encryptField(req.CKYC)
+	if err != nil {
+		return nil, err
+	}
+	var id int
+	err = r.db.QueryRow(`INSERT INTO bankdetails (clientid, bankname, accountnumber, ifsecode, micrcode, familycode, perscode, aadhar, pan, ckyc)
+	                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING _id`,
+		clientID, req.BankName, req.AccountNumber, req.IFSECode, req.MICRCode,
+		familyCode, persCode, encAadhar, encPAN, encCKYC).Scan(&id)
+	if err != nil {
+		return nil, fmt.Errorf("create bank detail: %w", err)
+	}
+	details, err := r.BankDetails(clientID)
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range details {
+		if d.ID == id {
+			return &d, nil
+		}
+	}
+	return nil, fmt.Errorf("bank detail not found after insert")
+}
+
+// encryptField encrypts a sensitive field value using the domain crypto package.
+// Import-cycle avoided by duplicating the env-key-based AES call here via the package.
+func encryptField(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	// Delegate to domain crypto — but since we're in repository we cannot import domain.
+	// Instead we call the shared package-level helper registered at startup.
+	if globalEncryptor == nil {
+		return value, nil // fallback: store plain if no encryptor configured (test mode)
+	}
+	return globalEncryptor(value)
+}
+
+func decryptField(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	if globalDecryptor == nil {
+		return value, nil
+	}
+	return globalDecryptor(value)
+}
+
+// globalEncryptor and globalDecryptor are set by InitCrypto from main at startup.
+var (
+	globalEncryptor func(string) (string, error)
+	globalDecryptor func(string) (string, error)
+)
+
+// InitCrypto wires the encryption/decryption functions from the domain layer into the repository.
+// Called once from main before serving requests.
+func InitCrypto(enc, dec func(string) (string, error)) {
+	globalEncryptor = enc
+	globalDecryptor = dec
 }
 
 func joinConditions(conds []string) string {

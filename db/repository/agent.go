@@ -18,11 +18,13 @@ func NewAgentRepo(db *sqlx.DB) *AgentRepo {
 	return &AgentRepo{db: db}
 }
 
+const agentSelectCols = `_id, name, address, mobile, email, login, password, branch, club,
+	                 licence_no, ag_since, ren_dt, pan, photo, slogan, newportal, terminated, userkey, authtoken`
+
 // FindByIdentifier looks up an agent by email or agentCode (login field).
 func (r *AgentRepo) FindByIdentifier(identifier string) (*models.Agent, error) {
 	var agent models.Agent
-	query := `SELECT _id, name, address, mobile, email, login, password, branch, club,
-	                 licence_no, ag_since, ren_dt, pan, photo, slogan, newportal, userkey, authtoken
+	query := `SELECT ` + agentSelectCols + `
 	          FROM agent
 	          WHERE email = $1 OR login = $1
 	          LIMIT 1`
@@ -35,13 +37,33 @@ func (r *AgentRepo) FindByIdentifier(identifier string) (*models.Agent, error) {
 // FindByID returns an agent by primary key.
 func (r *AgentRepo) FindByID(id int) (*models.Agent, error) {
 	var agent models.Agent
-	query := `SELECT _id, name, address, mobile, email, login, password, branch, club,
-	                 licence_no, ag_since, ren_dt, pan, photo, slogan, newportal, userkey, authtoken
-	          FROM agent WHERE _id = $1`
+	query := `SELECT ` + agentSelectCols + ` FROM agent WHERE _id = $1`
 	if err := r.db.Get(&agent, query, id); err != nil {
 		return nil, fmt.Errorf("agent not found: %w", err)
 	}
 	return &agent, nil
+}
+
+// RecordLoginAttempt inserts an attempt row for rate-limit tracking.
+func (r *AgentRepo) RecordLoginAttempt(identifier string, succeeded bool) error {
+	_, err := r.db.Exec(`INSERT INTO login_attempts (identifier, attempted_at, succeeded) VALUES ($1, NOW(), $2)`,
+		identifier, succeeded)
+	return err
+}
+
+// RecentFailedAttempts returns the count of failed login attempts in the last 15 minutes.
+func (r *AgentRepo) RecentFailedAttempts(identifier string) (int, error) {
+	var count int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM login_attempts
+	                       WHERE identifier=$1 AND succeeded=false AND attempted_at > NOW() - INTERVAL '15 minutes'`,
+		identifier).Scan(&count)
+	return count, err
+}
+
+// ClearLoginAttempts removes all attempts for an identifier (called on successful login).
+func (r *AgentRepo) ClearLoginAttempts(identifier string) error {
+	_, err := r.db.Exec(`DELETE FROM login_attempts WHERE identifier=$1`, identifier)
+	return err
 }
 
 // Create inserts a new agent and returns the inserted ID.

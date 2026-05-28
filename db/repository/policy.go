@@ -118,8 +118,8 @@ func (r *PolicyRepo) FindByNo(policyNo int) (*models.Policy, error) {
 	return &p, nil
 }
 
-// Create inserts a new policy.
-func (r *PolicyRepo) Create(req models.CreatePolicyRequest, planName string, issueDate, matDate, nextPremium time.Time) error {
+// Create inserts a new policy. age is computed from client DOB at issue date.
+func (r *PolicyRepo) Create(req models.CreatePolicyRequest, planName string, issueDate, matDate, nextPremium time.Time, age int) error {
 	var id int
 	if err := r.db.QueryRow(`SELECT COALESCE(MAX(_id),0)+1 FROM policies`).Scan(&id); err != nil {
 		return err
@@ -127,12 +127,12 @@ func (r *PolicyRepo) Create(req models.CreatePolicyRequest, planName string, iss
 	_, err := r.db.Exec(`
 		INSERT INTO policies (_id, policy_no, familycode, perscode, plan, plan_name, issue_date, mat_date,
 		                      term, ppt, sum_assured, premium, payment_mode, next_premium, nominee, relation,
-		                      branch, neft, dab, termrider, status, fupstatus)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,'IF','DUE')`,
+		                      branch, neft, dab, termrider, status, fupstatus, age)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,'IF','DUE',$21)`,
 		id, req.PolicyNo, req.FamilyCode, req.PersCode, req.PlanNo, planName,
 		issueDate, matDate, req.Term, req.PPT, req.SumAssured, req.Premium,
 		req.PaymentMode, nextPremium, req.Nominee, req.Relation,
-		req.Branch, req.NEFT, req.DAB, req.TermRider)
+		req.Branch, req.NEFT, req.DAB, req.TermRider, age)
 	return err
 }
 

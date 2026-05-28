@@ -156,6 +156,12 @@ components:
         clientType:  { type: string, enum: [C, P, N] }
         address:     { type: string }
 
+    SBScheduleEntry:
+      type: object
+      properties:
+        year:       { type: integer, description: "Policy year at which SB is payable" }
+        benefitPct: { type: number, description: "Percentage of sum assured payable" }
+
     Plan:
       type: object
       properties:
@@ -163,9 +169,11 @@ components:
         planName: { type: string }
         planType: { type: string }
         termPpt:  { type: boolean }
-        sbYears:  { type: string, nullable: true }
-        sbBenefits: { type: string, nullable: true }
-        stax:     { type: string }
+        sbSchedule:
+          type: array
+          description: "Parsed survival benefit schedule (from pipe-delimited sb_year/sb_benefit)"
+          items: { $ref: '#/components/schemas/SBScheduleEntry' }
+        stax:     { type: string, description: "Historical GST rates as firstYear/renewal (e.g. 4.5/2.25)" }
         lapsDays: { type: integer }
         gstRates:
           type: object
@@ -190,8 +198,8 @@ components:
         paymentMode:    { type: string, enum: [Y, H, Q, M, S] }
         nextPremium:    { type: string, format: date-time, nullable: true }
         matDate:        { type: string, format: date-time, nullable: true }
-        status:         { type: string, enum: [IF, LA, PU, SU, MA] }
-        fupStatus:      { type: string }
+        status:         { type: string, enum: [IF, LA, PU, SU, MA, CL, EX] }
+        fupStatus:      { type: string, enum: [PAID, DUE, OVERDUE, LAPSED] }
         daysUntilLapse: { type: integer }
 
     CreatePolicyRequest:
@@ -240,6 +248,18 @@ components:
         newFup:   { type: string, format: date }
         reason:   { type: string }
 
+    MultipleDue:
+      type: object
+      description: One instalment row from the multipledue (arrears) table
+      properties:
+        id:        { type: integer }
+        policyNo:  { type: integer }
+        dueDate:   { type: string, format: date-time, nullable: true }
+        instNo:    { type: integer }
+        intAmt:    { type: number }
+        validUpto: { type: string, format: date-time, nullable: true }
+        totalAmt:  { type: number }
+
     FUPHistory:
       type: object
       properties:
@@ -276,6 +296,33 @@ components:
         bonusComm:  { type: number }
         singleComm: { type: number }
         payDate:    { type: string, format: date }
+
+    BankDetail:
+      type: object
+      properties:
+        id:            { type: integer }
+        clientId:      { type: integer }
+        bankName:      { type: string }
+        accountNumber: { type: string }
+        ifseCode:      { type: string }
+        micrCode:      { type: string }
+        familyCode:    { type: string }
+        persCode:      { type: string }
+        aadhar:        { type: string, description: "Decrypted Aadhaar number (AES-256-GCM encrypted at rest)" }
+        pan:           { type: string, description: "Decrypted PAN (AES-256-GCM encrypted at rest)" }
+        ckyc:          { type: string, description: "Decrypted CKYC reference (AES-256-GCM encrypted at rest)" }
+
+    CreateBankDetailRequest:
+      type: object
+      required: [bankName, accountNumber]
+      properties:
+        bankName:      { type: string }
+        accountNumber: { type: string }
+        ifseCode:      { type: string }
+        micrCode:      { type: string }
+        aadhar:        { type: string, description: "Stored encrypted at rest" }
+        pan:           { type: string, description: "Stored encrypted at rest" }
+        ckyc:          { type: string, description: "Stored encrypted at rest" }
 
     CommissionSummary:
       type: object
@@ -413,6 +460,10 @@ paths:
   /auth/login:
     post:
       summary: Agent login
+      description: |
+        Authenticates with email or agentCode + password.
+        Accounts are locked for 15 minutes after 5 consecutive failures.
+        Accounts with terminated=true are permanently blocked.
       tags: [Auth]
       security: []
       requestBody:
@@ -428,6 +479,16 @@ paths:
               schema: { $ref: '#/components/schemas/LoginResponse' }
         "401":
           description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        "403":
+          description: Account terminated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        "429":
+          description: Account locked — too many failed attempts
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -740,6 +801,27 @@ paths:
                   history:
                     type: array
                     items: { $ref: '#/components/schemas/FUPHistory' }
+
+  /fup/multipledue/{policyNo}:
+    get:
+      summary: Instalment arrears for a policy
+      description: Returns all rows from the multipledue table — each overdue instalment with its amount and validity date.
+      tags: [FUP]
+      parameters:
+        - { name: policyNo, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Multiple due entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policyNo: { type: integer }
+                  dues:
+                    type: array
+                    items: { $ref: '#/components/schemas/MultipleDue' }
+        "404": { description: Policy not found }
 
   # ─── Commission ──────────────────────────────────────────────────────────────
   /commission:

@@ -21,6 +21,7 @@ type Agent struct {
 	Photo       string     `db:"photo"       json:"photo"`
 	Slogan      string     `db:"slogan"      json:"slogan"`
 	NewPortal   bool       `db:"newportal"   json:"newPortal"`
+	Terminated  *bool      `db:"terminated"  json:"-"`
 	UserKey     string     `db:"userkey"     json:"-"`
 	AuthToken   string     `db:"authtoken"   json:"-"`
 }

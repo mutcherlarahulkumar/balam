@@ -14,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const maxFailedAttempts = 5
+
 // AuthService handles authentication business logic.
 type AuthService struct {
 	agentRepo *repository.AgentRepo
@@ -25,15 +27,36 @@ func NewAuthService(repo *repository.AgentRepo) *AuthService {
 }
 
 // Login validates credentials and returns a signed JWT.
+// Returns "account_locked" if the identifier has >= 5 failed attempts in the last 15 minutes.
+// Returns "account_terminated" if the agent record has terminated=true.
+// TODO(LIC-API — Phase 2): On first login with agentCode, call POST https://licindia.in/api/v2/auth/login
+// to get userkey + authtoken. Store in agent.userkey and agent.authtoken. Use machine_id (device
+// fingerprint hash) for device binding. Support MPIN for offline re-auth without network.
 func (s *AuthService) Login(req models.LoginRequest) (*models.LoginResponse, error) {
+	// Lockout check before hitting bcrypt to avoid timing oracle
+	failedCount, err := s.agentRepo.RecentFailedAttempts(req.Identifier)
+	if err == nil && failedCount >= maxFailedAttempts {
+		return nil, errors.New("account_locked")
+	}
+
 	agent, err := s.agentRepo.FindByIdentifier(req.Identifier)
 	if err != nil {
+		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
 
+	if agent.Terminated != nil && *agent.Terminated {
+		return nil, errors.New("account_terminated")
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(agent.Password), []byte(req.Password)); err != nil {
+		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
+
+	// Clear failed attempts on success
+	_ = s.agentRepo.ClearLoginAttempts(req.Identifier)
+	_ = s.agentRepo.RecordLoginAttempt(req.Identifier, true)
 
 	token, expiresAt, err := generateToken(agent.ID)
 	if err != nil {
