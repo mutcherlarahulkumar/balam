@@ -1,0 +1,958 @@
+openapi: "3.0.3"
+info:
+  title: Balam LIC Agent CRM API
+  description: REST API for the Balam LIC Agent CRM backend. Manual-data-entry-first design.
+  version: "1.0.0"
+  contact:
+    email: rahulkumarmutcherla@gmail.com
+
+servers:
+  - url: https://api.balam.app/v1
+    description: Production
+  - url: http://localhost:8080/v1
+    description: Local development
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:   { type: string, example: validation_error }
+        message: { type: string, example: Field is required }
+        field:   { type: string, example: email }
+
+    AgentPublic:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        agentCode:   { type: string }
+        branch:      { type: string }
+        club:        { type: string }
+        licenceNo:   { type: string }
+        agSince:     { type: string, format: date-time, nullable: true }
+        renewalDate: { type: string, format: date-time, nullable: true }
+        pan:         { type: string }
+        mobile:      { type: string }
+        email:       { type: string, format: email }
+        photo:       { type: string }
+        slogan:      { type: string }
+        newPortal:   { type: boolean }
+
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier: { type: string, example: "agent@email.com" }
+        password:   { type: string, format: password, minLength: 6 }
+
+    LoginResponse:
+      type: object
+      properties:
+        token:     { type: string }
+        agent:     { $ref: '#/components/schemas/AgentPublic' }
+        expiresAt: { type: string, format: date-time }
+
+    RegisterRequest:
+      type: object
+      required: [name, email, agentCode, password, branch, mobile, licenceNo]
+      properties:
+        name:      { type: string, minLength: 2, maxLength: 80 }
+        email:     { type: string, format: email }
+        agentCode: { type: string }
+        password:  { type: string, minLength: 8 }
+        branch:    { type: string }
+        mobile:    { type: string, minLength: 10, maxLength: 15 }
+        licenceNo: { type: string }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword:     { type: string, minLength: 8 }
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:    { type: string }
+        mobile:  { type: string }
+        email:   { type: string, format: email }
+        photo:   { type: string }
+        slogan:  { type: string }
+        address: { type: string }
+
+    Family:
+      type: object
+      properties:
+        id:          { type: integer }
+        familyCode:  { type: string }
+        headName:    { type: string }
+        address:     { type: string }
+        email:       { type: string }
+        mobile:      { type: string }
+        pincode:     { type: string }
+        religion:    { type: string }
+        designation: { type: string }
+
+    FamilyListItem:
+      allOf:
+        - $ref: '#/components/schemas/Family'
+        - type: object
+          properties:
+            memberCount: { type: integer }
+            policyCount: { type: integer }
+
+    CreateFamilyRequest:
+      type: object
+      required: [headName]
+      properties:
+        familyCode:  { type: string }
+        headName:    { type: string, minLength: 2 }
+        address:     { type: string }
+        mobile:      { type: string }
+        email:       { type: string, format: email }
+        pincode:     { type: string }
+        religion:    { type: string }
+        designation: { type: string }
+
+    Client:
+      type: object
+      properties:
+        id:         { type: integer }
+        familyCode: { type: string }
+        persCode:   { type: string }
+        name:       { type: string }
+        mobile:     { type: string }
+        dob:        { type: string, format: date-time, nullable: true }
+        sex:        { type: string, enum: [M, F, O] }
+        address:    { type: string }
+        email:      { type: string }
+        occupation: { type: string }
+        age:        { type: integer }
+        clientType: { type: string, enum: [C, P, N] }
+
+    CreateClientRequest:
+      type: object
+      required: [familyCode, persCode, name]
+      properties:
+        familyCode:  { type: string }
+        persCode:    { type: string }
+        name:        { type: string, minLength: 2 }
+        dob:         { type: string, format: date, example: "1985-08-20" }
+        sex:         { type: string, enum: [M, F, O] }
+        mobile:      { type: string }
+        email:       { type: string, format: email }
+        occupation:  { type: string }
+        clientType:  { type: string, enum: [C, P, N] }
+        address:     { type: string }
+
+    Plan:
+      type: object
+      properties:
+        planNo:   { type: string }
+        planName: { type: string }
+        planType: { type: string }
+        termPpt:  { type: boolean }
+        sbYears:  { type: string, nullable: true }
+        sbBenefits: { type: string, nullable: true }
+        stax:     { type: string }
+        lapsDays: { type: integer }
+        gstRates:
+          type: object
+          properties:
+            firstYear: { type: number }
+            renewal:   { type: number }
+            note:      { type: string }
+
+    PolicyListItem:
+      type: object
+      properties:
+        id:             { type: integer }
+        policyNo:       { type: integer }
+        familyCode:     { type: string }
+        clientName:     { type: string }
+        planNo:         { type: string }
+        planName:       { type: string }
+        term:           { type: integer }
+        ppt:            { type: integer }
+        premium:        { type: number }
+        sumAssured:     { type: number }
+        paymentMode:    { type: string, enum: [Y, H, Q, M, S] }
+        nextPremium:    { type: string, format: date-time, nullable: true }
+        matDate:        { type: string, format: date-time, nullable: true }
+        status:         { type: string, enum: [IF, LA, PU, SU, MA] }
+        fupStatus:      { type: string }
+        daysUntilLapse: { type: integer }
+
+    CreatePolicyRequest:
+      type: object
+      required: [policyNo, familyCode, persCode, planNo, issueDate, matDate, term, ppt, sumAssured, premium, paymentMode, nextPremium, nominee, relation]
+      properties:
+        policyNo:    { type: integer }
+        familyCode:  { type: string }
+        persCode:    { type: string }
+        planNo:      { type: string }
+        issueDate:   { type: string, format: date }
+        matDate:     { type: string, format: date }
+        term:        { type: integer, minimum: 1 }
+        ppt:         { type: integer, minimum: 1 }
+        sumAssured:  { type: number, minimum: 1 }
+        premium:     { type: number, minimum: 1 }
+        paymentMode: { type: string, enum: [Y, H, Q, M, S] }
+        nextPremium: { type: string, format: date }
+        nominee:     { type: string }
+        relation:    { type: string }
+        branch:      { type: string }
+        neft:        { type: string, enum: [YES, NO] }
+        dab:         { type: integer }
+        termRider:   { type: integer }
+
+    FUPDueItem:
+      type: object
+      properties:
+        policyNo:       { type: integer }
+        clientName:     { type: string }
+        mobile:         { type: string }
+        planName:       { type: string }
+        premium:        { type: number }
+        nextPremium:    { type: string, format: date-time, nullable: true }
+        daysOverdue:    { type: integer }
+        paymentMode:    { type: string }
+        lapseDate:      { type: string, format: date-time, nullable: true }
+        daysUntilLapse: { type: integer }
+
+    UpdateFUPRequest:
+      type: object
+      required: [policyNo, oldFup, newFup]
+      properties:
+        policyNo: { type: integer }
+        oldFup:   { type: string, format: date }
+        newFup:   { type: string, format: date }
+        reason:   { type: string }
+
+    FUPHistory:
+      type: object
+      properties:
+        id:        { type: integer }
+        policyNo:  { type: integer }
+        oldFup:    { type: string, format: date-time, nullable: true }
+        newFup:    { type: string, format: date-time, nullable: true }
+        updatedBy: { type: string }
+        updatedAt: { type: string, format: date-time, nullable: true }
+
+    Commission:
+      type: object
+      properties:
+        id:         { type: integer }
+        policyNo:   { type: integer }
+        billDate:   { type: string, format: date-time, nullable: true }
+        firstComm:  { type: number }
+        secondComm: { type: number }
+        thirdComm:  { type: number }
+        bonusComm:  { type: number }
+        singleComm: { type: number }
+        subComm:    { type: number }
+        payDate:    { type: string, format: date-time, nullable: true }
+
+    CreateCommissionRequest:
+      type: object
+      required: [policyNo, billDate]
+      properties:
+        policyNo:   { type: integer }
+        billDate:   { type: string, format: date }
+        firstComm:  { type: number }
+        secondComm: { type: number }
+        thirdComm:  { type: number }
+        bonusComm:  { type: number }
+        singleComm: { type: number }
+        payDate:    { type: string, format: date }
+
+    CommissionSummary:
+      type: object
+      properties:
+        currentMonth:
+          type: object
+          properties:
+            month:           { type: string, example: "2026-05" }
+            totalCommission: { type: number }
+            policiesBilled:  { type: integer }
+        yearly:
+          type: array
+          items:
+            type: object
+            properties:
+              year:      { type: integer }
+              firstYear: { type: number }
+              renewal:   { type: number }
+              bonus:     { type: number }
+              gross:     { type: number }
+
+    GSTCalculateResponse:
+      type: object
+      properties:
+        policyNo:       { type: integer }
+        planNo:         { type: string }
+        planType:       { type: string }
+        basePremium:    { type: number }
+        premiumYear:    { type: integer }
+        gstRate:        { type: number }
+        gstAmount:      { type: number }
+        totalPremium:   { type: number }
+        regulation:     { type: string }
+        historicalNote: { type: string }
+
+    Loan:
+      type: object
+      properties:
+        id:               { type: integer }
+        policyNo:         { type: integer }
+        loanDate:         { type: string, format: date-time, nullable: true }
+        loanAmount:       { type: integer }
+        interestDueDate:  { type: string, format: date-time, nullable: true }
+        loanInterest:     { type: integer }
+        details:          { type: string }
+
+    CreateLoanRequest:
+      type: object
+      required: [policyNo, loanDate, loanAmount, interestDueDate]
+      properties:
+        policyNo:        { type: integer }
+        loanDate:        { type: string, format: date }
+        loanAmount:      { type: number, minimum: 1 }
+        interestDueDate: { type: string, format: date }
+        loanInterest:    { type: number }
+
+    SB:
+      type: object
+      properties:
+        id:           { type: integer }
+        policyNo:     { type: integer }
+        sbDueDate:    { type: string, format: date-time, nullable: true }
+        sbAmount:     { type: number }
+        instalmentNo: { type: integer }
+        sbPayDate:    { type: string, format: date-time, nullable: true }
+        chequeNo:     { type: string }
+        details:      { type: string }
+
+    CreateSBRequest:
+      type: object
+      required: [policyNo, sbDueDate, sbAmount, instalmentNo]
+      properties:
+        policyNo:     { type: integer }
+        sbDueDate:    { type: string, format: date }
+        sbAmount:     { type: number, minimum: 1 }
+        instalmentNo: { type: integer, minimum: 1 }
+
+    Lead:
+      type: object
+      properties:
+        id:         { type: integer }
+        leadId:     { type: string }
+        searchTerm: { type: string }
+        name:       { type: string }
+        mobile:     { type: string }
+        address:    { type: string }
+        status:     { type: integer }
+        dateAdded:  { type: string, format: date-time, nullable: true }
+
+    CreateLeadRequest:
+      type: object
+      required: [name, mobile]
+      properties:
+        name:       { type: string, minLength: 2 }
+        mobile:     { type: string, minLength: 10 }
+        address:    { type: string }
+        searchTerm: { type: string }
+
+    Activity:
+      type: object
+      properties:
+        id:           { type: integer }
+        clientId:     { type: integer }
+        activityDate: { type: string, format: date-time, nullable: true }
+        activityTime: { type: string, format: date-time, nullable: true }
+        activityType: { type: string }
+        details:      { type: string }
+        reminderDate: { type: string, format: date-time, nullable: true }
+        reminderTime: { type: string, format: date-time, nullable: true }
+        status:       { type: string }
+
+    CreateActivityRequest:
+      type: object
+      required: [clientId, activityType, activityDate]
+      properties:
+        clientId:     { type: integer }
+        activityType: { type: string, enum: [CALL, MEETING, DEMO, EMAIL, PROPOSAL, MEDICAL, REMINDER] }
+        activityDate: { type: string, format: date }
+        activityTime: { type: string, example: "10:00:00" }
+        details:      { type: string }
+        reminderDate: { type: string, format: date }
+        reminderTime: { type: string, example: "09:00:00" }
+        status:       { type: string, enum: [PENDING, DONE, CANCELLED] }
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:  { type: array, items: {} }
+        total: { type: integer }
+        page:  { type: integer }
+        limit: { type: integer }
+
+paths:
+  # ─── Auth ────────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      summary: Agent login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/register:
+    post:
+      summary: Register new agent (admin only for MVP)
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        "201": { description: Agent created }
+        "409": { description: Email already taken }
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT
+      tags: [Auth]
+      responses:
+        "200":
+          description: New token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:     { type: string }
+                  expiresAt: { type: string, format: date-time }
+
+  /auth/change-password:
+    post:
+      summary: Change agent password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordRequest' }
+      responses:
+        "200": { description: Password changed }
+        "401": { description: Wrong current password }
+
+  # ─── Agent ───────────────────────────────────────────────────────────────────
+  /agent/profile:
+    get:
+      summary: Get agent profile
+      tags: [Agent]
+      responses:
+        "200":
+          description: Agent profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentPublic' }
+    put:
+      summary: Update agent profile
+      tags: [Agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentPublic' }
+
+  # ─── Families ────────────────────────────────────────────────────────────────
+  /families:
+    get:
+      summary: List families
+      tags: [Families]
+      parameters:
+        - { name: search,  in: query, schema: { type: string } }
+        - { name: page,    in: query, schema: { type: integer, default: 1 } }
+        - { name: limit,   in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Paginated families
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedResponse' }
+    post:
+      summary: Create family
+      tags: [Families]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFamilyRequest' }
+      responses:
+        "201":
+          description: Family created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Family' }
+        "409": { description: Family code already taken }
+
+  /families/{familyCode}:
+    get:
+      summary: Get family with members and policies
+      tags: [Families]
+      parameters:
+        - { name: familyCode, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Family detail }
+        "404": { description: Family not found }
+    put:
+      summary: Update family
+      tags: [Families]
+      parameters:
+        - { name: familyCode, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFamilyRequest' }
+      responses:
+        "200": { description: Updated family }
+        "404": { description: Family not found }
+
+  # ─── Clients ─────────────────────────────────────────────────────────────────
+  /clients:
+    get:
+      summary: List clients
+      tags: [Clients]
+      parameters:
+        - { name: search,     in: query, schema: { type: string } }
+        - { name: familyCode, in: query, schema: { type: string } }
+        - { name: clientType, in: query, schema: { type: string, enum: [C, P, N] } }
+        - { name: page,       in: query, schema: { type: integer, default: 1 } }
+        - { name: limit,      in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200": { description: Paginated clients }
+    post:
+      summary: Create client
+      tags: [Clients]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateClientRequest' }
+      responses:
+        "201": { description: Client created }
+        "404": { description: Family not found }
+
+  /clients/search:
+    get:
+      summary: Search clients by name, mobile, or policy number
+      tags: [Clients]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Search results }
+
+  /clients/{id}:
+    get:
+      summary: Get client detail
+      tags: [Clients]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Client with policies, bank details, documents }
+        "404": { description: Client not found }
+    put:
+      summary: Update client
+      tags: [Clients]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateClientRequest' }
+      responses:
+        "200": { description: Updated client }
+        "404": { description: Client not found }
+
+  # ─── Plans ───────────────────────────────────────────────────────────────────
+  /plans:
+    get:
+      summary: List plan catalogue
+      tags: [Plans]
+      parameters:
+        - { name: type,   in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Plan list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Plan' }
+
+  # ─── Policies ────────────────────────────────────────────────────────────────
+  /policies:
+    get:
+      summary: List policies
+      tags: [Policies]
+      parameters:
+        - { name: status,       in: query, schema: { type: string, enum: [IF, LA, PU, SU, MA] } }
+        - { name: familyCode,   in: query, schema: { type: string } }
+        - { name: dueThisMonth, in: query, schema: { type: boolean } }
+        - { name: lapsingIn,    in: query, schema: { type: integer }, description: "Days until lapse threshold" }
+        - { name: page,         in: query, schema: { type: integer, default: 1 } }
+        - { name: limit,        in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200": { description: Paginated policies }
+    post:
+      summary: Create policy
+      tags: [Policies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePolicyRequest' }
+      responses:
+        "201": { description: Policy created }
+        "409": { description: Policy number already exists }
+
+  /policies/{policyNo}:
+    get:
+      summary: Get policy detail
+      tags: [Policies]
+      parameters:
+        - { name: policyNo, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Full policy with FUP history, loans, SBs }
+        "404": { description: Policy not found }
+    put:
+      summary: Update policy
+      tags: [Policies]
+      parameters:
+        - { name: policyNo, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:      { type: string, enum: [IF, LA, PU, SU, MA] }
+                nominee:     { type: string }
+                relation:    { type: string }
+                neft:        { type: string, enum: [YES, NO] }
+                nextPremium: { type: string, format: date }
+                fupStatus:   { type: string }
+      responses:
+        "200": { description: Updated policy }
+        "404": { description: Policy not found }
+
+  # ─── FUP ─────────────────────────────────────────────────────────────────────
+  /fup/due:
+    get:
+      summary: Get due / overdue policies
+      tags: [FUP]
+      parameters:
+        - { name: month,       in: query, schema: { type: string }, example: "2026-06" }
+        - { name: overdueDays, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Due policies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/FUPDueItem' }
+
+  /fup/update:
+    post:
+      summary: Update FUP date on a policy
+      tags: [FUP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateFUPRequest' }
+      responses:
+        "200": { description: FUP updated }
+        "404": { description: Policy not found }
+        "400": { description: oldFup mismatch }
+
+  /fup/history/{policyNo}:
+    get:
+      summary: FUP audit trail for a policy
+      tags: [FUP]
+      parameters:
+        - { name: policyNo, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: FUP history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policyNo: { type: integer }
+                  history:
+                    type: array
+                    items: { $ref: '#/components/schemas/FUPHistory' }
+
+  # ─── Commission ──────────────────────────────────────────────────────────────
+  /commission:
+    get:
+      summary: List commission records
+      tags: [Commission]
+      parameters:
+        - { name: year,  in: query, schema: { type: string } }
+        - { name: month, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Commission records }
+    post:
+      summary: Add commission record
+      tags: [Commission]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCommissionRequest' }
+      responses:
+        "201": { description: Commission record added }
+
+  /commission/summary:
+    get:
+      summary: Commission monthly and yearly summary
+      tags: [Commission]
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommissionSummary' }
+
+  /commission/calculate:
+    get:
+      summary: Estimate commission for a policy
+      tags: [Commission]
+      parameters:
+        - { name: policyNo, in: query, required: true, schema: { type: integer } }
+        - { name: year,     in: query, schema: { type: integer, default: 1 } }
+      responses:
+        "200": { description: Commission estimate }
+        "404": { description: Policy not found }
+
+  # ─── GST ─────────────────────────────────────────────────────────────────────
+  /gst/calculate:
+    get:
+      summary: Calculate GST on a premium
+      tags: [GST]
+      parameters:
+        - { name: policyNo,    in: query, required: true, schema: { type: integer } }
+        - { name: premiumYear, in: query, schema: { type: integer, default: 1 } }
+      responses:
+        "200":
+          description: GST breakdown
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GSTCalculateResponse' }
+
+  # ─── Loans ───────────────────────────────────────────────────────────────────
+  /loans:
+    get:
+      summary: List policy loans
+      tags: [Loans]
+      responses:
+        "200": { description: Loan records }
+    post:
+      summary: Add loan record
+      tags: [Loans]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLoanRequest' }
+      responses:
+        "201": { description: Loan added }
+        "404": { description: Policy not found }
+
+  # ─── Survival Benefits ───────────────────────────────────────────────────────
+  /sb:
+    get:
+      summary: List survival benefits
+      tags: [SurvivalBenefits]
+      parameters:
+        - { name: year,       in: query, schema: { type: string } }
+        - { name: unpaidOnly, in: query, schema: { type: boolean } }
+      responses:
+        "200": { description: SB records }
+    post:
+      summary: Add SB record
+      tags: [SurvivalBenefits]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSBRequest' }
+      responses:
+        "201": { description: SB added }
+
+  /sb/{id}/mark-paid:
+    put:
+      summary: Mark SB as received
+      tags: [SurvivalBenefits]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paidDate]
+              properties:
+                paidDate: { type: string, format: date }
+                chequeNo: { type: string }
+      responses:
+        "200": { description: Marked as paid }
+        "404": { description: SB record not found }
+        "409": { description: Already paid }
+
+  # ─── Leads ───────────────────────────────────────────────────────────────────
+  /leads:
+    get:
+      summary: List leads
+      tags: [Leads]
+      responses:
+        "200": { description: Lead list }
+    post:
+      summary: Add lead manually
+      tags: [Leads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateLeadRequest' }
+      responses:
+        "201": { description: Lead created }
+
+  # ─── Activities ──────────────────────────────────────────────────────────────
+  /activities:
+    get:
+      summary: List activities
+      tags: [Activities]
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: Activity list }
+    post:
+      summary: Log prospect activity
+      tags: [Activities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateActivityRequest' }
+      responses:
+        "201": { description: Activity logged }
+
+  /activities/today:
+    get:
+      summary: Today's pending reminders
+      tags: [Activities]
+      responses:
+        "200": { description: Today's activities }
+
+  # ─── Reports ─────────────────────────────────────────────────────────────────
+  /reports/cashflow:
+    get:
+      summary: Year-by-year cash inflows for a family
+      tags: [Reports]
+      parameters:
+        - { name: familyCode, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Cashflow data }
+
+  /reports/cashinout:
+    get:
+      summary: Net cash-in vs cash-out per year
+      tags: [Reports]
+      responses:
+        "200": { description: Cash in/out data }
+
+  /reports/status:
+    get:
+      summary: Current status snapshot per policy for a family
+      tags: [Reports]
+      parameters:
+        - { name: familyCode, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Status data }
+
+  /reports/calendar:
+    get:
+      summary: 12-month premium calendar for a family
+      tags: [Reports]
+      parameters:
+        - { name: familyCode, in: query, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Calendar data }
+
+  /reports/refresh:
+    post:
+      summary: Rebuild all report caches for a family
+      tags: [Reports]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [familyCode]
+              properties:
+                familyCode: { type: string }
+      responses:
+        "200": { description: Reports refreshed }
+        "404": { description: Family not found }

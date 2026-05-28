@@ -1,13 +1,93 @@
 package main
 
 import (
+	"agent-balam/db"
+	"agent-balam/db/repository"
+	"agent-balam/domain"
+	"agent-balam/handlers"
+	"agent-balam/middlewares"
+	"log"
+	"os"
+
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	server := gin.Default()
+	// Load .env.local first, fall back to .env
+	if err := godotenv.Load(".env.local"); err != nil {
+		_ = godotenv.Load(".env")
+	}
 
-	PrepareRoutes(server)
+	database, err := db.New()
+	if err != nil {
+		log.Fatalf("database connection failed: %v", err)
+	}
+	defer database.Close()
 
-	server.Run(":8080")
+	if err := db.RunMigrations(database); err != nil {
+		log.Fatalf("migrations failed: %v", err)
+	}
+
+	// Repositories
+	agentRepo := repository.NewAgentRepo(database)
+	familyRepo := repository.NewFamilyRepo(database)
+	clientRepo := repository.NewClientRepo(database)
+	planRepo := repository.NewPlanRepo(database)
+	policyRepo := repository.NewPolicyRepo(database)
+	fupRepo := repository.NewFUPRepo(database)
+	commRepo := repository.NewCommissionRepo(database)
+	loanRepo := repository.NewLoanRepo(database)
+	sbRepo := repository.NewSBRepo(database)
+	leadRepo := repository.NewLeadRepo(database)
+	reportRepo := repository.NewReportRepo(database)
+
+	// Domain services
+	authSvc := domain.NewAuthService(agentRepo)
+	agentSvc := domain.NewAgentService(agentRepo)
+	familySvc := domain.NewFamilyService(familyRepo, clientRepo, policyRepo)
+	clientSvc := domain.NewClientService(clientRepo, familyRepo, policyRepo)
+	planSvc := domain.NewPlanService(planRepo)
+	policySvc := domain.NewPolicyService(policyRepo, planRepo, fupRepo, loanRepo, sbRepo)
+	fupSvc := domain.NewFUPService(fupRepo, policyRepo)
+	commSvc := domain.NewCommissionService(commRepo, policyRepo)
+	gstSvc := domain.NewGSTService(policyRepo, planRepo)
+	loanSvc := domain.NewLoanService(loanRepo, policyRepo)
+	sbSvc := domain.NewSBService(sbRepo, policyRepo)
+	leadSvc := domain.NewLeadService(leadRepo, clientRepo)
+	reportSvc := domain.NewReportService(reportRepo, familyRepo)
+
+	// Handlers
+	authH := handlers.NewAuthHandler(authSvc, agentSvc)
+	agentH := handlers.NewAgentHandler(agentSvc)
+	familyH := handlers.NewFamilyHandler(familySvc)
+	clientH := handlers.NewClientHandler(clientSvc)
+	planH := handlers.NewPlanHandler(planSvc)
+	policyH := handlers.NewPolicyHandler(policySvc)
+	fupH := handlers.NewFUPHandler(fupSvc, agentSvc)
+	commH := handlers.NewCommissionHandler(commSvc)
+	gstH := handlers.NewGSTHandler(gstSvc)
+	loanH := handlers.NewLoanHandler(loanSvc)
+	sbH := handlers.NewSBHandler(sbSvc)
+	leadH := handlers.NewLeadHandler(leadSvc)
+	reportH := handlers.NewReportHandler(reportSvc)
+
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	router := gin.New()
+	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(middlewares.CORS())
+
+	PrepareRoutes(router, authH, agentH, familyH, clientH, planH, policyH, fupH, commH, gstH, loanH, sbH, leadH, reportH)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Balam API starting on :%s", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
 }
