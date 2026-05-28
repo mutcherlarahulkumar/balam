@@ -30,7 +30,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	resp, err := h.authSvc.Login(req)
 	if err != nil {
-		respondError(c, http.StatusUnauthorized, "invalid_credentials", "Email/agent code or password is incorrect")
+		switch err.Error() {
+		case "account_locked":
+			respondError(c, http.StatusTooManyRequests, "account_locked",
+				"Too many failed login attempts. Account locked for 15 minutes.")
+		case "account_terminated":
+			respondError(c, http.StatusForbidden, "account_terminated",
+				"This agent account has been terminated.")
+		default:
+			respondError(c, http.StatusUnauthorized, "invalid_credentials",
+				"Email/agent code or password is incorrect")
+		}
 		return
 	}
 	respond(c, http.StatusOK, resp)
