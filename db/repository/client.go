@@ -1,0 +1,163 @@
+package repository
+
+import (
+	"agent-balam/models"
+	"fmt"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+)
+
+// ClientRepo handles client table queries.
+type ClientRepo struct {
+	db *sqlx.DB
+}
+
+// NewClientRepo creates a new ClientRepo.
+func NewClientRepo(db *sqlx.DB) *ClientRepo {
+	return &ClientRepo{db: db}
+}
+
+const clientCols = `_id, familycode, perscode, name, mobileno, dob_r, sex, address, email, occupation, age, client_type, comment, source, city, state`
+
+// List returns paginated clients filtered by optional familyCode and clientType.
+func (r *ClientRepo) List(search, familyCode, clientType string, page, limit int) ([]models.Client, int, error) {
+	offset := (page - 1) * limit
+	conditions := []string{"1=1"}
+	args := []interface{}{}
+	n := 1
+
+	if search != "" {
+		conditions = append(conditions, fmt.Sprintf("(name ILIKE $%d OR mobileno ILIKE $%d)", n, n))
+		args = append(args, "%"+search+"%")
+		n++
+	}
+	if familyCode != "" {
+		conditions = append(conditions, fmt.Sprintf("familycode = $%d", n))
+		args = append(args, familyCode)
+		n++
+	}
+	if clientType != "" {
+		conditions = append(conditions, fmt.Sprintf("client_type = $%d", n))
+		args = append(args, clientType)
+		n++
+	}
+
+	where := "WHERE " + joinConditions(conditions)
+	var total int
+	if err := r.db.QueryRow(fmt.Sprintf(`SELECT COUNT(*) FROM client %s`, where), args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	args = append(args, limit, offset)
+	rows, err := r.db.Queryx(fmt.Sprintf(
+		`SELECT %s FROM client %s ORDER BY name LIMIT $%d OFFSET $%d`,
+		clientCols, where, n, n+1), args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var clients []models.Client
+	for rows.Next() {
+		var c models.Client
+		if err := rows.StructScan(&c); err != nil {
+			return nil, 0, err
+		}
+		clients = append(clients, c)
+	}
+	if clients == nil {
+		clients = []models.Client{}
+	}
+	return clients, total, rows.Err()
+}
+
+// FindByID returns a client by primary key.
+func (r *ClientRepo) FindByID(id int) (*models.Client, error) {
+	var c models.Client
+	if err := r.db.Get(&c, fmt.Sprintf(`SELECT %s FROM client WHERE _id=$1`, clientCols), id); err != nil {
+		return nil, fmt.Errorf("client not found: %w", err)
+	}
+	return &c, nil
+}
+
+// Search searches by name, mobile, or policy_no.
+func (r *ClientRepo) Search(q string) ([]models.Client, error) {
+	rows, err := r.db.Queryx(fmt.Sprintf(`
+		SELECT DISTINCT c.%s FROM client c
+		LEFT JOIN policies p ON p.familycode = c.familycode AND p.perscode = c.perscode
+		WHERE c.name ILIKE $1 OR c.mobileno ILIKE $1 OR CAST(p.policy_no AS TEXT) ILIKE $1
+		LIMIT 50`, clientCols), "%"+q+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var clients []models.Client
+	for rows.Next() {
+		var c models.Client
+		if err := rows.StructScan(&c); err != nil {
+			return nil, err
+		}
+		clients = append(clients, c)
+	}
+	if clients == nil {
+		clients = []models.Client{}
+	}
+	return clients, rows.Err()
+}
+
+// Create inserts a new client.
+func (r *ClientRepo) Create(req models.CreateClientRequest, dob *time.Time, age int) (*models.Client, error) {
+	var id int
+	if err := r.db.QueryRow(`SELECT COALESCE(MAX(_id),0)+1 FROM client`).Scan(&id); err != nil {
+		return nil, err
+	}
+	_, err := r.db.Exec(`INSERT INTO client (_id, familycode, perscode, name, mobileno, dob_r, sex, address, email, occupation, age, client_type)
+	                      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+		id, req.FamilyCode, req.PersCode, req.Name, req.Mobile, dob, req.Sex,
+		req.Address, req.Email, req.Occupation, age, req.ClientType)
+	if err != nil {
+		return nil, fmt.Errorf("create client: %w", err)
+	}
+	return r.FindByID(id)
+}
+
+// Update updates client fields.
+func (r *ClientRepo) Update(id int, req models.UpdateClientRequest, dob *time.Time, age int) error {
+	_, err := r.db.Exec(`UPDATE client SET name=$1, mobileno=$2, email=$3, sex=$4, address=$5, occupation=$6, client_type=$7, dob_r=$8, age=$9
+	                      WHERE _id=$10`,
+		req.Name, req.Mobile, req.Email, req.Sex, req.Address, req.Occupation, req.ClientType, dob, age, id)
+	return err
+}
+
+// BankDetails returns all bank records for a client.
+func (r *ClientRepo) BankDetails(clientID int) ([]models.BankDetail, error) {
+	var items []models.BankDetail
+	err := r.db.Select(&items, `SELECT _id, clientid, bankname, accountnumber, ifsecode, micrcode, familycode, perscode, aadhar, pan
+	                              FROM bankdetails WHERE clientid=$1`, clientID)
+	if items == nil {
+		items = []models.BankDetail{}
+	}
+	return items, err
+}
+
+// Documents returns all documents for a client.
+func (r *ClientRepo) Documents(clientID int) ([]models.Document, error) {
+	var items []models.Document
+	err := r.db.Select(&items, `SELECT _id, clientid, policy_no, title, photo, profile FROM documents WHERE clientid=$1`, clientID)
+	if items == nil {
+		items = []models.Document{}
+	}
+	return items, err
+}
+
+func joinConditions(conds []string) string {
+	result := ""
+	for i, c := range conds {
+		if i > 0 {
+			result += " AND "
+		}
+		result += c
+	}
+	return result
+}
