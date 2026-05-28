@@ -54,6 +54,27 @@ func (r *SBRepo) List(year string, unpaidOnly bool) ([]models.SB, error) {
 	return items, rows.Err()
 }
 
+// ListByPolicy returns all SB records for a specific policy number.
+func (r *SBRepo) ListByPolicy(policyNo int) ([]models.SB, error) {
+	rows, err := r.db.Query(`SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, ch_no, COALESCE(details,'') FROM sb WHERE policy_no=$1 ORDER BY sb_duedate`, policyNo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []models.SB
+	for rows.Next() {
+		var item models.SB
+		if err := rows.Scan(&item.ID, &item.PolicyNo, &item.SBDueDate, &item.SBAmount, &item.InstalNo, &item.SBPayDate, &item.ChequeNo, &item.Details); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if items == nil {
+		items = []models.SB{}
+	}
+	return items, rows.Err()
+}
+
 // Create inserts a new SB record.
 func (r *SBRepo) Create(req models.CreateSBRequest, dueDate time.Time) error {
 	_, err := r.db.Exec(`INSERT INTO sb (policy_no, sb_duedate, sb_amount, i_no) VALUES ($1,$2,$3,$4)`,

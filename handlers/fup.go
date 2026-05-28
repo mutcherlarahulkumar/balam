@@ -61,6 +61,27 @@ func (h *FUPHandler) Update(c *gin.Context) {
 	respond(c, http.StatusOK, gin.H{"message": "FUP updated successfully"})
 }
 
+// MultipleDues handles GET /fup/multipledue/:policyNo — returns instalment arrears.
+func (h *FUPHandler) MultipleDues(c *gin.Context) {
+	policyNo, err := strconv.Atoi(c.Param("policyNo"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid_policy_no", "Policy number must be an integer")
+		return
+	}
+
+	dues, err := h.svc.MultipleDues(policyNo)
+	if err != nil {
+		switch err.Error() {
+		case "policy_not_found":
+			respondError(c, http.StatusNotFound, "policy_not_found", "Policy not found")
+		default:
+			respondError(c, http.StatusInternalServerError, "server_error", "Failed to fetch multiple dues")
+		}
+		return
+	}
+	respond(c, http.StatusOK, gin.H{"policyNo": policyNo, "dues": dues})
+}
+
 // History handles GET /fup/history/:policyNo.
 func (h *FUPHandler) History(c *gin.Context) {
 	policyNo, err := strconv.Atoi(c.Param("policyNo"))
