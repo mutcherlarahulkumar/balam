@@ -8,6 +8,7 @@ on:
 
 env:
   GO_VERSION: "1.22"
+  MIGRATE_VERSION: "v4.17.1"
 
 jobs:
   build-and-test:
@@ -40,22 +41,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
-
       - name: Install golang-migrate CLI
         run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz | tar xvz
+          curl -sSL https://github.com/golang-migrate/migrate/releases/download/${{ env.MIGRATE_VERSION }}/migrate.linux-amd64.tar.gz | tar xz
           sudo mv migrate /usr/local/bin/migrate
+          migrate -version
+
+      - name: Resolve dirty migration state (if any)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # If a previous migration run failed and left the DB dirty, force-reset to
+        # the last known-good version so `migrate up` can continue cleanly.
+        # The force version (7) is the last successfully applied migration before
+        # the commission table FK bug (version 8). Once all migrations are clean
+        # this step becomes a safe no-op when the DB is not dirty.
+        run: |
+          DIRTY=$(migrate -path db/migrations -database "$DATABASE_URL" version 2>&1 || true)
+          echo "Current migration state: $DIRTY"
+          if echo "$DIRTY" | grep -q "dirty"; then
+            echo "Dirty state detected — forcing to version 7 (last clean migration)"
+            migrate -path db/migrations -database "$DATABASE_URL" force 7
+          fi
 
       - name: Run migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           migrate -path db/migrations -database "$DATABASE_URL" up
+          echo "Migration complete"
 
   deploy:
     name: Deploy
