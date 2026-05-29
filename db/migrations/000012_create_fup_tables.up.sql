@@ -4,10 +4,7 @@ CREATE TABLE IF NOT EXISTS "fuphistory" (
     "oldfup"        TIMESTAMP,
     "newfup"        TIMESTAMP,
     "name"          VARCHAR(100),
-    "dateupdated"   TIMESTAMP,
-
-    CONSTRAINT "fk_fuphistory_policy"
-        FOREIGN KEY ("policy_no") REFERENCES "policies" ("policy_no")
+    "dateupdated"   TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS "fupupdate" (
@@ -16,8 +13,5 @@ CREATE TABLE IF NOT EXISTS "fupupdate" (
     "oldfup"        TIMESTAMP,
     "newfup"        TIMESTAMP,
     "name"          VARCHAR(100),
-    "dateupdated"   TIMESTAMP,
-
-    CONSTRAINT "fk_fupupdate_policy"
-        FOREIGN KEY ("policy_no") REFERENCES "policies" ("policy_no")
+    "dateupdated"   TIMESTAMP
 );

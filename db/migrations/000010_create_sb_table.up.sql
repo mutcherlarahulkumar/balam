@@ -6,8 +6,5 @@ CREATE TABLE IF NOT EXISTS "sb" (
     "i_no"          INTEGER,
     "sb_paydate"    TIMESTAMP,
     "ch_no"         VARCHAR(10),
-    "details"       TEXT,
-
-    CONSTRAINT "fk_sb_policy"
-        FOREIGN KEY ("policy_no") REFERENCES "policies" ("policy_no")
+    "details"       TEXT
 );

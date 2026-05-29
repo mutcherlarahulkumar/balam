@@ -7,8 +7,5 @@ CREATE TABLE IF NOT EXISTS "loan" (
     "loaninterest"  INTEGER,
     "xcharge"       INTEGER,
     "revivalded"    INTEGER,
-    "details"       TEXT,
-
-    CONSTRAINT "fk_loan_policy"
-        FOREIGN KEY ("policy_no") REFERENCES "policies" ("policy_no")
+    "details"       TEXT
 );
