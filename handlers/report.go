@@ -78,7 +78,7 @@ func (h *ReportHandler) Refresh(c *gin.Context) {
 		FamilyCode string `json:"familyCode" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 	if err := h.svc.Refresh(body.FamilyCode); err != nil {

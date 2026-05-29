@@ -71,7 +71,7 @@ func (h *ClientHandler) Search(c *gin.Context) {
 func (h *ClientHandler) Create(c *gin.Context) {
 	var req models.CreateClientRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *ClientHandler) Update(c *gin.Context) {
 
 	var req models.UpdateClientRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 

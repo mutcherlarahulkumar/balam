@@ -61,7 +61,7 @@ type LoginResponse struct {
 type RegisterRequest struct {
 	Name      string `json:"name"      binding:"required,min=2,max=80"`
 	Email     string `json:"email"     binding:"required,email"`
-	AgentCode string `json:"agentCode" binding:"required,min=3,max=20,alphanum"`
+	AgentCode string `json:"agentCode" binding:"required,min=3,max=20"`
 	Password  string `json:"password"  binding:"required,min=8,max=72"`
 	Branch    string `json:"branch"    binding:"required,min=2,max=20"`
 	Mobile    string `json:"mobile"    binding:"required,len=10,numeric"`

@@ -33,7 +33,7 @@ func (h *LeadHandler) ListLeads(c *gin.Context) {
 func (h *LeadHandler) CreateLead(c *gin.Context) {
 	var req models.CreateLeadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 	lead, err := h.svc.CreateLead(req)
@@ -69,7 +69,7 @@ func (h *LeadHandler) TodayActivities(c *gin.Context) {
 func (h *LeadHandler) CreateActivity(c *gin.Context) {
 	var req models.CreateActivityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 	activity, err := h.svc.CreateActivity(req)

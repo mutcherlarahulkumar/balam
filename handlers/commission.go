@@ -33,7 +33,7 @@ func (h *CommissionHandler) List(c *gin.Context) {
 func (h *CommissionHandler) Create(c *gin.Context) {
 	var req models.CreateCommissionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 

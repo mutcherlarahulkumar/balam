@@ -57,7 +57,7 @@ func (h *PolicyHandler) Get(c *gin.Context) {
 func (h *PolicyHandler) Create(c *gin.Context) {
 	var req models.CreatePolicyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (h *PolicyHandler) Update(c *gin.Context) {
 
 	var req models.UpdatePolicyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
