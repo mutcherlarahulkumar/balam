@@ -61,11 +61,11 @@ type LoginResponse struct {
 type RegisterRequest struct {
 	Name      string `json:"name"      binding:"required,min=2,max=80"`
 	Email     string `json:"email"     binding:"required,email"`
-	AgentCode string `json:"agentCode" binding:"required"`
-	Password  string `json:"password"  binding:"required,min=8"`
-	Branch    string `json:"branch"    binding:"required"`
-	Mobile    string `json:"mobile"    binding:"required,min=10,max=15"`
-	LicenceNo string `json:"licenceNo" binding:"required"`
+	AgentCode string `json:"agentCode" binding:"required,min=3,max=20,alphanum"`
+	Password  string `json:"password"  binding:"required,min=8,max=72"`
+	Branch    string `json:"branch"    binding:"required,min=2,max=20"`
+	Mobile    string `json:"mobile"    binding:"required,len=10,numeric"`
+	LicenceNo string `json:"licenceNo" binding:"required,min=3,max=100"`
 }
 
 // RefreshResponse is returned by POST /auth/refresh.

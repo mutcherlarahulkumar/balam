@@ -87,12 +87,20 @@ func (s *AuthService) Login(req models.LoginRequest) (*models.LoginResponse, err
 
 // Register creates a new agent account.
 func (s *AuthService) Register(req models.RegisterRequest) (int, error) {
-	exists, err := s.agentRepo.EmailExists(req.Email)
+	emailExists, err := s.agentRepo.EmailExists(req.Email)
 	if err != nil {
 		return 0, err
 	}
-	if exists {
+	if emailExists {
 		return 0, fmt.Errorf("email_taken")
+	}
+
+	codeExists, err := s.agentRepo.AgentCodeExists(req.AgentCode)
+	if err != nil {
+		return 0, err
+	}
+	if codeExists {
+		return 0, fmt.Errorf("agent_code_taken")
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)

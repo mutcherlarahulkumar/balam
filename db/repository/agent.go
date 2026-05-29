@@ -98,3 +98,10 @@ func (r *AgentRepo) EmailExists(email string) (bool, error) {
 	err := r.db.QueryRow(`SELECT COUNT(1) FROM agent WHERE email=$1`, email).Scan(&count)
 	return count > 0, err
 }
+
+// AgentCodeExists returns true if the login/agentCode is already taken.
+func (r *AgentRepo) AgentCodeExists(agentCode string) (bool, error) {
+	var count int
+	err := r.db.QueryRow(`SELECT COUNT(1) FROM agent WHERE login=$1`, agentCode).Scan(&count)
+	return count > 0, err
+}
