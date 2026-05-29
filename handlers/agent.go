@@ -33,7 +33,7 @@ func (h *AgentHandler) GetProfile(c *gin.Context) {
 func (h *AgentHandler) UpdateProfile(c *gin.Context) {
 	var req models.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 

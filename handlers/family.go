@@ -47,7 +47,7 @@ func (h *FamilyHandler) Get(c *gin.Context) {
 func (h *FamilyHandler) Create(c *gin.Context) {
 	var req models.CreateFamilyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *FamilyHandler) Create(c *gin.Context) {
 func (h *FamilyHandler) Update(c *gin.Context) {
 	var req models.UpdateFamilyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 

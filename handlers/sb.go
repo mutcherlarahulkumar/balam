@@ -34,7 +34,7 @@ func (h *SBHandler) List(c *gin.Context) {
 func (h *SBHandler) Create(c *gin.Context) {
 	var req models.CreateSBRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
@@ -60,7 +60,7 @@ func (h *SBHandler) MarkPaid(c *gin.Context) {
 
 	var req models.MarkSBPaidRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 

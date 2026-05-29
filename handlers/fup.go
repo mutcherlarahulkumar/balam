@@ -36,7 +36,7 @@ func (h *FUPHandler) Due(c *gin.Context) {
 func (h *FUPHandler) Update(c *gin.Context) {
 	var req models.UpdateFUPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "validation_error", err.Error())
+		respondValidation(c, err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func (h *FUPHandler) Update(c *gin.Context) {
 		case "policy_not_found":
 			respondError(c, http.StatusNotFound, "policy_not_found", "Policy not found")
 		case "old_fup_mismatch":
-			respondFieldError(c, "oldFup", "Provided oldFup does not match current next_premium on the policy")
+			respondError(c, http.StatusUnprocessableEntity, "fup_mismatch", "Provided oldFup does not match the current next premium on the policy")
 		default:
 			respondError(c, http.StatusBadRequest, "fup_update_failed", err.Error())
 		}
