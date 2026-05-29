@@ -24,6 +24,7 @@ func PrepareRoutes(
 	sbH *handlers.SBHandler,
 	leadH *handlers.LeadHandler,
 	reportH *handlers.ReportHandler,
+	adminH *handlers.AdminHandler,
 ) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -139,5 +140,11 @@ func PrepareRoutes(
 		reports.GET("/status", reportH.CurrentStatus)
 		reports.GET("/calendar", reportH.Calendar)
 		reports.POST("/refresh", reportH.Refresh)
+	}
+
+	// Admin — protected, requires auth
+	admin := protected.Group("/admin")
+	{
+		admin.POST("/import-sql", adminH.ImportSQL)
 	}
 }

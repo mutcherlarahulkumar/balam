@@ -77,6 +77,7 @@ func main() {
 	sbH := handlers.NewSBHandler(sbSvc)
 	leadH := handlers.NewLeadHandler(leadSvc)
 	reportH := handlers.NewReportHandler(reportSvc)
+	adminH := handlers.NewAdminHandler(database)
 
 	if os.Getenv("GIN_MODE") == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -86,7 +87,7 @@ func main() {
 	router.Use(gin.Logger(), gin.Recovery())
 	router.Use(middlewares.CORS())
 
-	PrepareRoutes(router, authH, agentH, familyH, clientH, planH, policyH, fupH, commH, gstH, loanH, sbH, leadH, reportH)
+	PrepareRoutes(router, authH, agentH, familyH, clientH, planH, policyH, fupH, commH, gstH, loanH, sbH, leadH, reportH, adminH)
 
 	port := os.Getenv("PORT")
 	if port == "" {
