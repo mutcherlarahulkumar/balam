@@ -18,8 +18,24 @@ func NewAgentRepo(db *sqlx.DB) *AgentRepo {
 	return &AgentRepo{db: db}
 }
 
-const agentSelectCols = `_id, name, address, mobile, email, login, password, branch, club,
-	                 licence_no, ag_since, ren_dt, pan, photo, slogan, newportal, terminated, userkey, authtoken`
+const agentSelectCols = `_id,
+	COALESCE(name,'')       AS name,
+	COALESCE(address,'')    AS address,
+	COALESCE(mobile,'')     AS mobile,
+	COALESCE(email,'')      AS email,
+	COALESCE(login,'')      AS login,
+	COALESCE(password,'')   AS password,
+	COALESCE(branch,'')     AS branch,
+	COALESCE(club,'')       AS club,
+	COALESCE(licence_no,'') AS licence_no,
+	ag_since, ren_dt,
+	COALESCE(pan,'')        AS pan,
+	COALESCE(photo,'')      AS photo,
+	COALESCE(slogan,'')     AS slogan,
+	COALESCE(newportal,false) AS newportal,
+	terminated,
+	COALESCE(userkey,'')    AS userkey,
+	COALESCE(authtoken,'')  AS authtoken`
 
 // FindByIdentifier looks up an agent by email or agentCode (login field).
 func (r *AgentRepo) FindByIdentifier(identifier string) (*models.Agent, error) {

@@ -6,7 +6,8 @@ import (
 	"agent-balam/domain"
 	"agent-balam/handlers"
 	"agent-balam/middlewares"
-	"log"
+	"log/slog"
+
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -21,12 +22,14 @@ func main() {
 
 	database, err := db.New()
 	if err != nil {
-		log.Fatalf("database connection failed: %v", err)
+		slog.Error("database connection failed", "err", err)
+		os.Exit(1)
 	}
 	defer database.Close()
 
 	if err := db.RunMigrations(database); err != nil {
-		log.Fatalf("migrations failed: %v", err)
+		slog.Error("migrations failed", "err", err)
+		os.Exit(1)
 	}
 
 	// Wire encryption for sensitive bank-detail fields (aadhar, pan, ckyc)
@@ -89,8 +92,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Balam API starting on :%s", port)
+	slog.Info("Balam API starting", "port", port)
 	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("server error: %v", err)
+		slog.Error("server error", "err", err)
+		os.Exit(1)
 	}
 }

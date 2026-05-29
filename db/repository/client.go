@@ -18,7 +18,22 @@ func NewClientRepo(db *sqlx.DB) *ClientRepo {
 	return &ClientRepo{db: db}
 }
 
-const clientCols = `_id, familycode, perscode, name, mobileno, dob_r, sex, address, email, occupation, age, client_type, comment, source, city, state`
+const clientCols = `_id,
+	COALESCE(familycode,'')  AS familycode,
+	COALESCE(perscode,'')    AS perscode,
+	COALESCE(name,'')        AS name,
+	COALESCE(mobileno,'')    AS mobileno,
+	dob_r,
+	COALESCE(sex,'')         AS sex,
+	COALESCE(address,'')     AS address,
+	COALESCE(email,'')       AS email,
+	COALESCE(occupation,'')  AS occupation,
+	COALESCE(age,0)          AS age,
+	COALESCE(client_type,'') AS client_type,
+	COALESCE(comment,'')     AS comment,
+	COALESCE(source,'')      AS source,
+	COALESCE(city,'')        AS city,
+	COALESCE(state,'')       AS state`
 
 // List returns paginated clients filtered by optional familyCode and clientType.
 func (r *ClientRepo) List(search, familyCode, clientType string, page, limit int) ([]models.Client, int, error) {
