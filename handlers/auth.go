@@ -59,6 +59,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		switch err.Error() {
 		case "email_taken":
 			respondError(c, http.StatusConflict, "email_taken", "An account with this email already exists")
+		case "agent_code_taken":
+			respondError(c, http.StatusConflict, "agent_code_taken", "This agent code is already registered")
 		default:
 			respondError(c, http.StatusInternalServerError, "server_error", "Failed to create account")
 		}
