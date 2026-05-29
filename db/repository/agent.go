@@ -27,6 +27,7 @@ func (r *AgentRepo) FindByIdentifier(identifier string) (*models.Agent, error) {
 	query := `SELECT ` + agentSelectCols + `
 	          FROM agent
 	          WHERE email = $1 OR login = $1
+	          ORDER BY _id DESC
 	          LIMIT 1`
 	if err := r.db.Get(&agent, query, identifier); err != nil {
 		return nil, fmt.Errorf("agent not found: %w", err)
