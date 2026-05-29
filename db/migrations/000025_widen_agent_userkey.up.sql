@@ -1,0 +1,1 @@
+ALTER TABLE agent ALTER COLUMN userkey TYPE TEXT;
