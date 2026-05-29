@@ -23,7 +23,7 @@ func NewAdminHandler(db *sqlx.DB) *AdminHandler {
 // allowedPrefixes are the only SQL statement types the import endpoint will execute.
 // DROP, ALTER, CREATE, GRANT, COPY etc. are all rejected.
 var allowedPrefixes = []string{
-	"begin", "commit", "truncate", "insert", "--", "\n", "\r",
+	"begin", "commit", "truncate", "insert", "select setval(", "--", "\n", "\r",
 }
 
 func isSeedSQL(sql string) bool {
