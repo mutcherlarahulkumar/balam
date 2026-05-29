@@ -108,7 +108,14 @@ func (s *AuthService) Register(req models.RegisterRequest) (int, error) {
 		return 0, err
 	}
 
-	return s.agentRepo.Create(req.Name, req.Email, req.AgentCode, string(hashed), req.Branch, req.Mobile, req.LicenceNo)
+	id, err := s.agentRepo.Create(req.Name, req.Email, req.AgentCode, string(hashed), req.Branch, req.Mobile, req.LicenceNo)
+	if err != nil {
+		return 0, err
+	}
+	// Clear any prior failed attempts so a freshly registered account is never locked out.
+	_ = s.agentRepo.ClearLoginAttempts(req.AgentCode)
+	_ = s.agentRepo.ClearLoginAttempts(req.Email)
+	return id, nil
 }
 
 // Refresh issues a new token for an already-authenticated agent.
