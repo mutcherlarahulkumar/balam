@@ -3,7 +3,7 @@ package db
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -51,10 +51,10 @@ func RunMigrations(db *sqlx.DB) error {
 	defer func() {
 		srcErr, dbErr := m.Close()
 		if srcErr != nil {
-			log.Printf("migrate source close: %v", srcErr)
+			slog.Warn("migrate source close error", "err", srcErr)
 		}
 		if dbErr != nil {
-			log.Printf("migrate db close: %v", dbErr)
+			slog.Warn("migrate db close error", "err", dbErr)
 		}
 	}()
 
@@ -66,19 +66,21 @@ func RunMigrations(db *sqlx.DB) error {
 		// the last known-good version and retry once so the server can start.
 		version, dirty, vErr := m.Version()
 		if vErr == nil && dirty {
-			log.Printf("migrations: dirty state at version %d — forcing back one version and retrying", version)
+			slog.Warn("migrations: dirty state detected, forcing recovery", "version", version)
 			if fErr := m.Force(int(version) - 1); fErr != nil {
 				return fmt.Errorf("force migration version: %w", fErr)
 			}
 			if rErr := m.Up(); rErr != nil && rErr != migrate.ErrNoChange {
 				return fmt.Errorf("run migrations after dirty-state recovery: %w", rErr)
 			}
-			log.Println("migrations: recovered from dirty state, up to date")
+			slog.Info("migrations: recovered from dirty state, up to date")
+
 			return nil
 		}
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
-	log.Println("migrations: up to date")
+	slog.Info("migrations: up to date")
+
 	return nil
 }

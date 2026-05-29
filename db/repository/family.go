@@ -40,7 +40,7 @@ func (r *FamilyRepo) List(search string, page, limit int) ([]models.FamilyListIt
 	args = append(args, limit, offset)
 
 	query := fmt.Sprintf(`
-		SELECT f.familycode, f.headname, f.mobileno, f.address, f.pincode, f._id,
+		SELECT COALESCE(f.familycode,''), COALESCE(f.headname,''), COALESCE(f.mobileno,''), COALESCE(f.address,''), COALESCE(f.pincode,''), f._id,
 		       COUNT(DISTINCT c._id)       AS member_count,
 		       COUNT(DISTINCT p.policy_no) AS policy_count
 		FROM family f
@@ -75,7 +75,16 @@ func (r *FamilyRepo) List(search string, page, limit int) ([]models.FamilyListIt
 // FindByCode returns a single family by its familycode.
 func (r *FamilyRepo) FindByCode(familyCode string) (*models.Family, error) {
 	var f models.Family
-	if err := r.db.Get(&f, `SELECT _id, familycode, headname, address, email, mobileno, pincode, religion, designation, last_update
+	if err := r.db.Get(&f, `SELECT _id,
+	                          COALESCE(familycode,'')   AS familycode,
+	                          COALESCE(headname,'')     AS headname,
+	                          COALESCE(address,'')      AS address,
+	                          COALESCE(email,'')        AS email,
+	                          COALESCE(mobileno,'')     AS mobileno,
+	                          COALESCE(pincode,'')      AS pincode,
+	                          COALESCE(religion,'')     AS religion,
+	                          COALESCE(designation,'')  AS designation,
+	                          last_update
 	                          FROM family WHERE familycode=$1`, familyCode); err != nil {
 		return nil, fmt.Errorf("family not found: %w", err)
 	}

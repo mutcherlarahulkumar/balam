@@ -108,9 +108,32 @@ func (r *PolicyRepo) List(f ListFilter) ([]models.PolicyListItem, int, error) {
 // FindByNo returns a full policy row.
 func (r *PolicyRepo) FindByNo(policyNo int) (*models.Policy, error) {
 	var p models.Policy
-	query := `SELECT _id, policy_no, familycode, perscode, issue_date, mat_date, payment_mode, premium,
-	                 sum_assured, plan, plan_name, term, ppt, next_premium, mat_amount, nominee, relation,
-	                 agcode, stat_cd, status, fupstatus, age, lastpaid, neft, lastfup, branch, dab, termrider
+	query := `SELECT _id, policy_no,
+	                 COALESCE(familycode,'')   AS familycode,
+	                 COALESCE(perscode,'')     AS perscode,
+	                 issue_date, mat_date,
+	                 COALESCE(payment_mode,'') AS payment_mode,
+	                 COALESCE(premium,0)       AS premium,
+	                 COALESCE(sum_assured,0)   AS sum_assured,
+	                 COALESCE(plan,0)          AS plan,
+	                 COALESCE(plan_name,'')    AS plan_name,
+	                 COALESCE(term,0)          AS term,
+	                 COALESCE(ppt,0)           AS ppt,
+	                 next_premium,
+	                 COALESCE(mat_amount,0)    AS mat_amount,
+	                 COALESCE(nominee,'')      AS nominee,
+	                 COALESCE(relation,'')     AS relation,
+	                 COALESCE(agcode,'')       AS agcode,
+	                 COALESCE(stat_cd,'')      AS stat_cd,
+	                 COALESCE(status,'')       AS status,
+	                 COALESCE(fupstatus,'')    AS fupstatus,
+	                 COALESCE(age,0)           AS age,
+	                 lastpaid,
+	                 COALESCE(neft,'')         AS neft,
+	                 lastfup,
+	                 COALESCE(branch,'')       AS branch,
+	                 COALESCE(dab,0)           AS dab,
+	                 COALESCE(termrider,0)     AS termrider
 	          FROM policies WHERE policy_no=$1`
 	if err := r.db.Get(&p, query, policyNo); err != nil {
 		return nil, fmt.Errorf("policy not found: %w", err)

@@ -6,7 +6,7 @@ import (
 	"agent-balam/models"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -36,31 +36,31 @@ func NewAuthService(repo *repository.AgentRepo) *AuthService {
 func (s *AuthService) Login(req models.LoginRequest) (*models.LoginResponse, error) {
 	failedCount, err := s.agentRepo.RecentFailedAttempts(req.Identifier)
 	if err == nil && failedCount >= maxFailedAttempts {
-		log.Printf("[auth] login blocked: identifier=%q locked after %d failed attempts", req.Identifier, failedCount)
+		slog.Warn("login blocked: account locked", "identifier", req.Identifier, "failedCount", failedCount)
 		return nil, errors.New("account_locked")
 	}
 
 	agent, err := s.agentRepo.FindByIdentifier(req.Identifier)
 	if err != nil {
-		log.Printf("[auth] login failed: identifier=%q agent not found: %v", req.Identifier, err)
+		slog.Warn("login failed: agent not found", "identifier", req.Identifier, "err", err)
 		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
 
-	log.Printf("[auth] agent found: id=%d login=%q email=%q passwordLen=%d", agent.ID, agent.Login, agent.Email, len(agent.Password))
+	slog.Info("agent found", "id", agent.ID, "login", agent.Login, "email", agent.Email, "passwordLen", len(agent.Password))
 
 	if agent.Terminated != nil && *agent.Terminated {
-		log.Printf("[auth] login blocked: identifier=%q account terminated", req.Identifier)
+		slog.Warn("login blocked: account terminated", "identifier", req.Identifier)
 		return nil, errors.New("account_terminated")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(agent.Password), []byte(req.Password)); err != nil {
-		log.Printf("[auth] login failed: identifier=%q bcrypt mismatch: %v", req.Identifier, err)
+		slog.Warn("login failed: bcrypt mismatch", "identifier", req.Identifier, "err", err)
 		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
 
-	log.Printf("[auth] login success: identifier=%q agentID=%d", req.Identifier, agent.ID)
+	slog.Info("login success", "identifier", req.Identifier, "agentID", agent.ID)
 
 	// Clear failed attempts on success
 	_ = s.agentRepo.ClearLoginAttempts(req.Identifier)
