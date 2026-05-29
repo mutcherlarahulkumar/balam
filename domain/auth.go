@@ -6,6 +6,7 @@ import (
 	"agent-balam/models"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -33,26 +34,33 @@ func NewAuthService(repo *repository.AgentRepo) *AuthService {
 // to get userkey + authtoken. Store in agent.userkey and agent.authtoken. Use machine_id (device
 // fingerprint hash) for device binding. Support MPIN for offline re-auth without network.
 func (s *AuthService) Login(req models.LoginRequest) (*models.LoginResponse, error) {
-	// Lockout check before hitting bcrypt to avoid timing oracle
 	failedCount, err := s.agentRepo.RecentFailedAttempts(req.Identifier)
 	if err == nil && failedCount >= maxFailedAttempts {
+		log.Printf("[auth] login blocked: identifier=%q locked after %d failed attempts", req.Identifier, failedCount)
 		return nil, errors.New("account_locked")
 	}
 
 	agent, err := s.agentRepo.FindByIdentifier(req.Identifier)
 	if err != nil {
+		log.Printf("[auth] login failed: identifier=%q agent not found: %v", req.Identifier, err)
 		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
 
+	log.Printf("[auth] agent found: id=%d login=%q email=%q passwordLen=%d", agent.ID, agent.Login, agent.Email, len(agent.Password))
+
 	if agent.Terminated != nil && *agent.Terminated {
+		log.Printf("[auth] login blocked: identifier=%q account terminated", req.Identifier)
 		return nil, errors.New("account_terminated")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(agent.Password), []byte(req.Password)); err != nil {
+		log.Printf("[auth] login failed: identifier=%q bcrypt mismatch: %v", req.Identifier, err)
 		_ = s.agentRepo.RecordLoginAttempt(req.Identifier, false)
 		return nil, errors.New("invalid_credentials")
 	}
+
+	log.Printf("[auth] login success: identifier=%q agentID=%d", req.Identifier, agent.ID)
 
 	// Clear failed attempts on success
 	_ = s.agentRepo.ClearLoginAttempts(req.Identifier)
