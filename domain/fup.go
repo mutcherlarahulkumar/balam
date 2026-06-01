@@ -19,8 +19,8 @@ func NewFUPService(fr *repository.FUPRepo, pr *repository.PolicyRepo) *FUPServic
 }
 
 // DuePolicies returns policies with due/overdue premiums.
-func (s *FUPService) DuePolicies(month string, overdueDays int) ([]models.FUPDueItem, error) {
-	return s.fupRepo.DuePolicies(month, overdueDays)
+func (s *FUPService) DuePolicies(year, month string, overdueDays int) ([]models.FUPDueItem, error) {
+	return s.fupRepo.DuePolicies(year, month, overdueDays)
 }
 
 // UpdateFUP validates the old FUP and applies the update transactionally.
@@ -89,12 +89,9 @@ func ComputeFUPStatus(newFUP time.Time, paymentMode string, defaultLapsDays int)
 	case now.After(lapseDate):
 		return "LAPSED"
 	case now.After(fup):
-		// Distinguish OVERDUE (past due, within grace) from DUE (today is the due date)
-		if now.Equal(fup) {
-			return "DUE"
-		}
 		return "OVERDUE"
 	default:
+		// now == fup (today is the due date)
 		return "DUE"
 	}
 }

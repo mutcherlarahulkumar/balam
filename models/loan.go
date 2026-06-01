@@ -15,9 +15,9 @@ type Loan struct {
 
 // CreateLoanRequest holds data for POST /loans.
 type CreateLoanRequest struct {
-	PolicyNo     int     `json:"policyNo"         binding:"required"`
-	LoanDate     string  `json:"loanDate"         binding:"required"`
-	LoanAmount   float64 `json:"loanAmount"       binding:"required,gt=0"`
-	IntDueDate   string  `json:"interestDueDate"  binding:"required"`
-	LoanInterest float64 `json:"loanInterest"     binding:"omitempty,min=0"`
+	PolicyNo     int    `json:"policyNo"         binding:"required"`
+	LoanDate     string `json:"loanDate"         binding:"required"`
+	LoanAmount   int    `json:"loanAmount"       binding:"required,gt=0"`
+	IntDueDate   string `json:"interestDueDate"  binding:"required"`
+	LoanInterest int    `json:"loanInterest"     binding:"omitempty,min=0"`
 }

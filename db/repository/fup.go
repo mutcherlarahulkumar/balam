@@ -18,8 +18,8 @@ func NewFUPRepo(db *sqlx.DB) *FUPRepo {
 	return &FUPRepo{db: db}
 }
 
-// DuePolicies returns policies with premiums due/overdue, optionally filtered by month (YYYY-MM) and overdue days.
-func (r *FUPRepo) DuePolicies(month string, overdueDays int) ([]models.FUPDueItem, error) {
+// DuePolicies returns policies with premiums due/overdue, optionally filtered by year, month (1-12), and overdue days.
+func (r *FUPRepo) DuePolicies(year, month string, overdueDays int) ([]models.FUPDueItem, error) {
 	query := `
 		SELECT p.policy_no, COALESCE(c.name,'') AS client_name,
 		       COALESCE(c.mobileno,'') AS mobile,
@@ -37,8 +37,13 @@ func (r *FUPRepo) DuePolicies(month string, overdueDays int) ([]models.FUPDueIte
 	args := []interface{}{}
 	n := 1
 
+	if year != "" {
+		query += fmt.Sprintf(` AND EXTRACT(YEAR FROM p.next_premium) = $%d`, n)
+		args = append(args, year)
+		n++
+	}
 	if month != "" {
-		query += fmt.Sprintf(` AND TO_CHAR(p.next_premium, 'YYYY-MM') = $%d`, n)
+		query += fmt.Sprintf(` AND EXTRACT(MONTH FROM p.next_premium) = $%d`, n)
 		args = append(args, month)
 		n++
 	}

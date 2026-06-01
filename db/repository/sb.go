@@ -3,6 +3,7 @@ package repository
 import (
 	"agent-balam/models"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -18,14 +19,19 @@ func NewSBRepo(db *sqlx.DB) *SBRepo {
 	return &SBRepo{db: db}
 }
 
-// List returns SB records, optionally filtered by year and unpaid status.
-func (r *SBRepo) List(year string, unpaidOnly bool) ([]models.SB, error) {
+// List returns SB records, optionally filtered by year, month, and unpaid status.
+func (r *SBRepo) List(year, month string, unpaidOnly bool) ([]models.SB, error) {
 	query := `SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, ch_no, COALESCE(details,'') FROM sb WHERE 1=1`
 	args := []interface{}{}
 	n := 1
-	if year != "" {
-		query += ` AND EXTRACT(YEAR FROM sb_duedate) = $` + itoa(n)
-		args = append(args, year)
+	if y, err := strconv.Atoi(year); err == nil && y > 0 {
+		query += fmt.Sprintf(` AND EXTRACT(YEAR FROM sb_duedate) = $%d`, n)
+		args = append(args, y)
+		n++
+	}
+	if m, err := strconv.Atoi(month); err == nil && m >= 1 && m <= 12 {
+		query += fmt.Sprintf(` AND EXTRACT(MONTH FROM sb_duedate) = $%d`, n)
+		args = append(args, m)
 		n++
 	}
 	if unpaidOnly {

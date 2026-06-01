@@ -3,6 +3,7 @@ package repository
 import (
 	"agent-balam/models"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -24,14 +25,14 @@ func (r *CommissionRepo) List(year, month string) ([]models.Commission, error) {
 	          FROM commission WHERE 1=1`
 	args := []interface{}{}
 	n := 1
-	if year != "" {
+	if y, err := strconv.Atoi(year); err == nil && y > 0 {
 		query += fmt.Sprintf(` AND EXTRACT(YEAR FROM bill_date) = $%d`, n)
-		args = append(args, year)
+		args = append(args, y)
 		n++
 	}
-	if month != "" {
+	if m, err := strconv.Atoi(month); err == nil && m >= 1 && m <= 12 {
 		query += fmt.Sprintf(` AND EXTRACT(MONTH FROM bill_date) = $%d`, n)
-		args = append(args, month)
+		args = append(args, m)
 		n++
 	}
 	query += ` ORDER BY bill_date DESC`

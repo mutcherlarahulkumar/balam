@@ -147,4 +147,7 @@ func PrepareRoutes(
 	{
 		admin.POST("/import-sql", adminH.ImportSQL)
 	}
+
+	// Agent data import — clears all existing data then imports from INSERT-only SQL file
+	protected.POST("/agent/import", adminH.ResetAndImport)
 }

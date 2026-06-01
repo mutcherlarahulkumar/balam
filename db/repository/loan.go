@@ -37,6 +37,6 @@ func (r *LoanRepo) List(policyNo int) ([]models.Loan, error) {
 // Create inserts a loan record.
 func (r *LoanRepo) Create(req models.CreateLoanRequest, loanDate, intDueDate time.Time) error {
 	_, err := r.db.Exec(`INSERT INTO loan (policy_no, ldate, loan, intduedate, loaninterest) VALUES ($1,$2,$3,$4,$5)`,
-		req.PolicyNo, loanDate, int(req.LoanAmount), intDueDate, int(req.LoanInterest))
+		req.PolicyNo, loanDate, req.LoanAmount, intDueDate, req.LoanInterest)
 	return err
 }

@@ -20,6 +20,11 @@ func main() {
 		_ = godotenv.Load(".env")
 	}
 
+	if secret := os.Getenv("JWT_SECRET"); len(secret) < 32 {
+		slog.Error("JWT_SECRET must be set and at least 32 characters long")
+		os.Exit(1)
+	}
+
 	database, err := db.New()
 	if err != nil {
 		slog.Error("database connection failed", "err", err)
