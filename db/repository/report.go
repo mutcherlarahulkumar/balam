@@ -115,21 +115,51 @@ func (r *ReportRepo) RefreshCalendar(familyCode string) error {
 		return err
 	}
 
+	// Calendar logic: for each month slot (1–12) a premium falls if:
+	//   M (monthly)     → always
+	//   Q (quarterly)   → (col_month - base_month) mod 3 = 0  (wrapping via mod 12)
+	//   H (half-yearly) → (col_month - base_month) mod 6 = 0
+	//   Y (yearly)      → col_month = base_month
+	// Formula: ((12 + col - base) % 12) % period = 0
 	_, err = tx.Exec(`
 		INSERT INTO rpt_prcalendar (familycode, perscode, policy_no, jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec)
 		SELECT p.familycode, p.perscode, CAST(p.policy_no AS VARCHAR),
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 1  OR p.payment_mode IN ('M','H','Q') THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 2  OR p.payment_mode IN ('M','H','Q') THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 3  OR p.payment_mode IN ('M','Q') THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 4  OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 5  OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 6  OR p.payment_mode IN ('M','H') THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 7  OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 8  OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 9  OR p.payment_mode IN ('M','Q') THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 10 OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 11 OR p.payment_mode = 'M' THEN p.premium ELSE 0 END,
-		       CASE WHEN EXTRACT(MONTH FROM p.next_premium) = 12 OR p.payment_mode IN ('M','H','Q') THEN p.premium ELSE 0 END
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=1)
+		            OR (p.payment_mode='Q' AND ((12+1 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+1 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=2)
+		            OR (p.payment_mode='Q' AND ((12+2 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+2 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=3)
+		            OR (p.payment_mode='Q' AND ((12+3 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+3 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=4)
+		            OR (p.payment_mode='Q' AND ((12+4 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+4 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=5)
+		            OR (p.payment_mode='Q' AND ((12+5 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+5 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=6)
+		            OR (p.payment_mode='Q' AND ((12+6 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+6 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=7)
+		            OR (p.payment_mode='Q' AND ((12+7 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+7 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=8)
+		            OR (p.payment_mode='Q' AND ((12+8 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+8 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=9)
+		            OR (p.payment_mode='Q' AND ((12+9 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+9 -EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=10)
+		            OR (p.payment_mode='Q' AND ((12+10-EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+10-EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=11)
+		            OR (p.payment_mode='Q' AND ((12+11-EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+11-EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END,
+		  CASE WHEN p.payment_mode='M' OR (p.payment_mode='Y'  AND EXTRACT(MONTH FROM p.next_premium)::int=12)
+		            OR (p.payment_mode='Q' AND ((12+12-EXTRACT(MONTH FROM p.next_premium)::int)%12)%3=0)
+		            OR (p.payment_mode='H' AND ((12+12-EXTRACT(MONTH FROM p.next_premium)::int)%12)%6=0) THEN p.premium ELSE 0 END
 		FROM policies p
 		WHERE p.familycode=$1 AND p.status='IF'`, familyCode)
 	if err != nil {

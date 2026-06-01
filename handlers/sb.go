@@ -20,9 +20,10 @@ func NewSBHandler(svc *domain.SBService) *SBHandler {
 }
 
 // List handles GET /sb.
+// Query params: year (YYYY), month (1-12), unpaidOnly (bool).
 func (h *SBHandler) List(c *gin.Context) {
 	unpaidOnly := c.Query("unpaidOnly") == "true"
-	items, err := h.svc.List(c.Query("year"), unpaidOnly)
+	items, err := h.svc.List(c.Query("year"), c.Query("month"), unpaidOnly)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "server_error", "Failed to fetch SB records")
 		return

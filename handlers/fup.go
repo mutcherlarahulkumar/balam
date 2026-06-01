@@ -22,9 +22,10 @@ func NewFUPHandler(svc *domain.FUPService, agentSvc *domain.AgentService) *FUPHa
 }
 
 // Due handles GET /fup/due.
+// Query params: year (YYYY), month (1-12), overdueDays (int).
 func (h *FUPHandler) Due(c *gin.Context) {
 	overdueDays, _ := strconv.Atoi(c.Query("overdueDays"))
-	items, err := h.svc.DuePolicies(c.Query("month"), overdueDays)
+	items, err := h.svc.DuePolicies(c.Query("year"), c.Query("month"), overdueDays)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, "server_error", "Failed to fetch due policies")
 		return

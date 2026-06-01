@@ -19,8 +19,8 @@ func NewSBService(sr *repository.SBRepo, pr *repository.PolicyRepo) *SBService {
 }
 
 // List returns SB records.
-func (s *SBService) List(year string, unpaidOnly bool) ([]models.SB, error) {
-	return s.sbRepo.List(year, unpaidOnly)
+func (s *SBService) List(year, month string, unpaidOnly bool) ([]models.SB, error) {
+	return s.sbRepo.List(year, month, unpaidOnly)
 }
 
 // Create validates the policy and inserts an SB record.
