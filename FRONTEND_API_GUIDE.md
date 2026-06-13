@@ -242,6 +242,11 @@ per year for money-back plans), `lapsDays`, and current `gstRates`.
 
 **Payment modes**: `Y` yearly, `H` half-yearly, `Q` quarterly, `M` monthly, `S` single
 
+**New response field — `premiumEndDate`**: returned on `GET /policies` (list items) and
+`GET /policies/:policyNo` (detail). Computed as `issueDate + ppt years` — the date premium
+payments stop (premium paying term end date). `null` if `issueDate` is not set. Existing
+fields `plan` (numeric plan code) and `planName` were already present in both responses.
+
 **CreatePolicyRequest**
 | Field | Rule |
 |---|---|
@@ -292,6 +297,13 @@ per year for money-back plans), `lapsDays`, and current `gstRates`.
 
 Each item includes `daysOverdue`, `lapseDate`, `daysUntilLapse` (computed from
 `plans.lapsdays`, defaults to 180 if plan not found).
+
+**Calendar-style month/year browsing**: when `year` and/or `month` is supplied, the endpoint
+returns **all** policies whose `nextPremium` falls in that calendar month/year — past,
+present, or future — so the frontend can build a month picker (e.g. "June 2025") and show
+everything due that month, not just overdue items. When `year`/`month` are both omitted, the
+endpoint defaults to the original behaviour: only premiums due **on or before today**
+(current due/overdue list).
 
 **UpdateFUPRequest**
 ```json

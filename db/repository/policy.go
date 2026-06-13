@@ -71,7 +71,9 @@ func (r *PolicyRepo) List(f ListFilter) ([]models.PolicyListItem, int, error) {
 		       CAST(p.plan AS TEXT) AS plan_no,
 		       COALESCE(p.plan_name,'') AS plan_name,
 		       p.term, p.ppt, p.premium, p.sum_assured,
-		       p.payment_mode, p.next_premium, p.mat_date,
+		       p.payment_mode,
+		       (p.issue_date + (p.ppt || ' years')::interval)::date AS premium_end_date,
+		       p.next_premium, p.mat_date,
 		       COALESCE(p.status,'') AS status,
 		       COALESCE(p.fupstatus,'') AS fupstatus,
 		       GREATEST(0, EXTRACT(DAY FROM (p.next_premium + COALESCE(pl.lapsdays,180) * INTERVAL '1 day' - CURRENT_TIMESTAMP))::int) AS days_until_lapse
@@ -93,7 +95,7 @@ func (r *PolicyRepo) List(f ListFilter) ([]models.PolicyListItem, int, error) {
 		var item models.PolicyListItem
 		if err := rows.Scan(&item.ID, &item.PolicyNo, &item.FamilyCode, &item.ClientName,
 			&item.PlanNo, &item.PlanName, &item.Term, &item.PPT, &item.Premium,
-			&item.SumAssured, &item.PaymentMode, &item.NextPremium, &item.MatDate,
+			&item.SumAssured, &item.PaymentMode, &item.PremiumEndDate, &item.NextPremium, &item.MatDate,
 			&item.Status, &item.FUPStatus, &item.DaysUntilLapse); err != nil {
 			return nil, 0, err
 		}
@@ -133,7 +135,8 @@ func (r *PolicyRepo) FindByNo(policyNo int) (*models.Policy, error) {
 	                 lastfup,
 	                 COALESCE(branch,'')       AS branch,
 	                 COALESCE(dab,0)           AS dab,
-	                 COALESCE(termrider,0)     AS termrider
+	                 COALESCE(termrider,0)     AS termrider,
+	                 (issue_date + (COALESCE(ppt,0) || ' years')::interval)::date AS premium_end_date
 	          FROM policies WHERE policy_no=$1`
 	if err := r.db.Get(&p, query, policyNo); err != nil {
 		return nil, fmt.Errorf("policy not found: %w", err)
@@ -230,7 +233,7 @@ func (r *PolicyRepo) PoliciesByFamilyCode(familyCode string) ([]models.PolicyLis
 		var item models.PolicyListItem
 		if err := rows.Scan(&item.ID, &item.PolicyNo, &item.FamilyCode, &item.ClientName,
 			&item.PlanNo, &item.PlanName, &item.Term, &item.PPT, &item.Premium,
-			&item.SumAssured, &item.PaymentMode, &item.NextPremium, &item.MatDate,
+			&item.SumAssured, &item.PaymentMode, &item.PremiumEndDate, &item.NextPremium, &item.MatDate,
 			&item.Status, &item.FUPStatus, &item.DaysUntilLapse); err != nil {
 			return nil, err
 		}
