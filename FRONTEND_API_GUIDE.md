@@ -443,6 +443,30 @@ regime cutover date (2025-09-22) — see Phase 2 doc for making this data-driven
 
 ---
 
+### Dashboard (auth required)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/dashboard` | aggregated home-screen summary |
+
+Single call combining everything the home/landing screen typically needs, instead of 5
+separate requests:
+
+```json
+{
+  "duePremiums": { "total": 12, "preview": [ /* up to 5 FUPDueItem, see /fup/due */ ] },
+  "todayActivities": [ /* Activity[], see /activities/today */ ],
+  "commissionThisMonth": { "month": "2026-06", "totalCommission": 12345.0, ... },
+  "unpaidSB": { "total": 3, "preview": [ /* up to 5 SB, see /sb */ ] },
+  "leads": { "total": 7, "preview": [ /* up to 5 Lead, most recent first */ ] }
+}
+```
+
+`total` reflects the full count; `preview` is capped at 5 items — for the full list, call the
+underlying endpoint (`/fup/due`, `/sb?unpaidOnly=true`, `/leads`).
+
+---
+
 ### Reports (auth required)
 
 | Method | Path | Notes |
