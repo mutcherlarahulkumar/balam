@@ -247,6 +247,12 @@ per year for money-back plans), `lapsDays`, and current `gstRates`.
 payments stop (premium paying term end date). `null` if `issueDate` is not set. Existing
 fields `plan` (numeric plan code) and `planName` were already present in both responses.
 
+**New response field — `planDetails`** (detail only): `GET /policies/:policyNo` now also
+returns a `planDetails` object — the full plan record from `GET /plans` (same shape as the
+`PlanResponse` schema: `planNo`, `planName`, `planType`, `termPpt`, `sbSchedule`, `stax`,
+`lapsDays`, `gstRates`). `null` if the policy's `plan` code doesn't match any row in `plans`.
+Use this instead of doing a separate `/plans` lookup per policy.
+
 **CreatePolicyRequest**
 | Field | Rule |
 |---|---|

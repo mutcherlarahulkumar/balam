@@ -28,23 +28,36 @@ func (s *PlanService) List(planType, search string) ([]models.PlanResponse, erro
 
 	resp := make([]models.PlanResponse, 0, len(plans))
 	for _, p := range plans {
-		pr := models.PlanResponse{
-			PlanNo:     p.PlanNo,
-			PlanName:   p.PlanName,
-			PlanType:   p.PlanType,
-			TermPPT:    p.TermPPT == "Y" || p.TermPPT == "1" || p.TermPPT == "true",
-			SBSchedule: parseSBSchedule(p.SBYear, p.SBBenefit),
-			Stax:       p.Stax,
-			LapsDays:   p.LapsDays,
-			GSTRates: models.GSTInfo{
-				FirstYear: 0,
-				Renewal:   0,
-				Note:      "GST 0% effective 22 Sep 2025 for all individual policies",
-			},
-		}
-		resp = append(resp, pr)
+		resp = append(resp, buildPlanResponse(p))
 	}
 	return resp, nil
+}
+
+// GetByNo returns a single plan as an API response object.
+func (s *PlanService) GetByNo(planNo string) (*models.PlanResponse, error) {
+	p, err := s.planRepo.FindByNo(planNo)
+	if err != nil {
+		return nil, err
+	}
+	pr := buildPlanResponse(*p)
+	return &pr, nil
+}
+
+func buildPlanResponse(p models.Plan) models.PlanResponse {
+	return models.PlanResponse{
+		PlanNo:     p.PlanNo,
+		PlanName:   p.PlanName,
+		PlanType:   p.PlanType,
+		TermPPT:    p.TermPPT == "Y" || p.TermPPT == "1" || p.TermPPT == "true",
+		SBSchedule: parseSBSchedule(p.SBYear, p.SBBenefit),
+		Stax:       p.Stax,
+		LapsDays:   p.LapsDays,
+		GSTRates: models.GSTInfo{
+			FirstYear: 0,
+			Renewal:   0,
+			Note:      "GST 0% effective 22 Sep 2025 for all individual policies",
+		},
+	}
 }
 
 // parseSBSchedule converts the pipe-delimited sb_year and sb_benefit strings into a

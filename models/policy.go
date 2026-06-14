@@ -91,7 +91,8 @@ type UpdatePolicyRequest struct {
 // PolicyDetail extends Policy with full history.
 type PolicyDetail struct {
 	Policy
-	FUPHistory []FUPHistory `json:"fupHistory"`
-	Loans      []Loan       `json:"loans"`
-	SBRecords  []SB         `json:"sbRecords"`
+	PlanDetails *PlanResponse `json:"planDetails"`
+	FUPHistory  []FUPHistory  `json:"fupHistory"`
+	Loans       []Loan        `json:"loans"`
+	SBRecords   []SB          `json:"sbRecords"`
 }

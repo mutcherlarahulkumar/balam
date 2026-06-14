@@ -5,6 +5,7 @@ import (
 	"agent-balam/models"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -80,11 +81,18 @@ func (s *PolicyService) GetByNo(policyNo int) (*models.PolicyDetail, error) {
 		return nil, err
 	}
 
+	var planDetails *models.PlanResponse
+	if plan, err := s.planRepo.FindByNo(strconv.Itoa(policy.Plan)); err == nil {
+		pr := buildPlanResponse(*plan)
+		planDetails = &pr
+	}
+
 	return &models.PolicyDetail{
-		Policy:     *policy,
-		FUPHistory: history,
-		Loans:      loans,
-		SBRecords:  sbs,
+		Policy:      *policy,
+		PlanDetails: planDetails,
+		FUPHistory:  history,
+		Loans:       loans,
+		SBRecords:   sbs,
 	}, nil
 }
 
