@@ -23,7 +23,7 @@ func (r *FUPRepo) DuePolicies(year, month string, overdueDays int) ([]models.FUP
 	query := `
 		SELECT p.policy_no, COALESCE(c.name,'') AS client_name,
 		       COALESCE(c.mobileno,'') AS mobile,
-		       COALESCE(p.plan_name,'') AS plan_name,
+		       COALESCE(NULLIF(p.plan_name,''), pl.plan_name, '') AS plan_name,
 		       p.premium, p.next_premium, p.payment_mode,
 		       GREATEST(0, EXTRACT(DAY FROM CURRENT_DATE - p.next_premium)::int) AS days_overdue,
 		       p.next_premium + COALESCE(pl.lapsdays,180) * INTERVAL '1 day' AS lapse_date,

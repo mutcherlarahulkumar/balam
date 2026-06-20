@@ -4,17 +4,21 @@ import "agent-balam/models"
 
 const dashboardPreviewLimit = 5
 
+// dashboardLapsingDays is the lookahead window for the "lapsing soon" widget.
+const dashboardLapsingDays = 15
+
 // DashboardService aggregates data from other services for the agent home screen.
 type DashboardService struct {
-	fupSvc  *FUPService
-	leadSvc *LeadService
-	commSvc *CommissionService
-	sbSvc   *SBService
+	fupSvc    *FUPService
+	leadSvc   *LeadService
+	commSvc   *CommissionService
+	sbSvc     *SBService
+	policySvc *PolicyService
 }
 
 // NewDashboardService creates a new DashboardService.
-func NewDashboardService(fupSvc *FUPService, leadSvc *LeadService, commSvc *CommissionService, sbSvc *SBService) *DashboardService {
-	return &DashboardService{fupSvc: fupSvc, leadSvc: leadSvc, commSvc: commSvc, sbSvc: sbSvc}
+func NewDashboardService(fupSvc *FUPService, leadSvc *LeadService, commSvc *CommissionService, sbSvc *SBService, policySvc *PolicyService) *DashboardService {
+	return &DashboardService{fupSvc: fupSvc, leadSvc: leadSvc, commSvc: commSvc, sbSvc: sbSvc, policySvc: policySvc}
 }
 
 // Summary returns a single aggregated payload combining: due/overdue premiums,
@@ -46,12 +50,18 @@ func (s *DashboardService) Summary() (*models.DashboardResponse, error) {
 		return nil, err
 	}
 
+	lapsing, lapsingTotal, err := s.policySvc.List("", "", false, dashboardLapsingDays, 1, dashboardPreviewLimit)
+	if err != nil {
+		return nil, err
+	}
+
 	resp := &models.DashboardResponse{
 		DuePremiums:         models.DashboardFUP{Total: len(due), Preview: truncateFUP(due, dashboardPreviewLimit)},
 		TodayActivities:     activities,
 		CommissionThisMonth: commSummary.CurrentMonth,
 		UnpaidSB:            models.DashboardSB{Total: len(unpaidSB), Preview: truncateSB(unpaidSB, dashboardPreviewLimit)},
 		Leads:               models.DashboardLeads{Total: len(leads), Preview: truncateLeads(leads, dashboardPreviewLimit)},
+		LapsingPolicies:     models.DashboardPolicies{Total: lapsingTotal, Preview: lapsing},
 	}
 	return resp, nil
 }

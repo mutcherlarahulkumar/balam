@@ -242,6 +242,12 @@ per year for money-back plans), `lapsDays`, and current `gstRates`.
 
 **Payment modes**: `Y` yearly, `H` half-yearly, `Q` quarterly, `M` monthly, `S` single
 
+**Bug fix — `planName` was returning empty**: `planName` is now correctly filled from the
+`plans` catalogue whenever the policy row's own `plan_name` column is blank (which is the
+case for most imported/legacy policies). Affects `GET /policies`, `GET /policies/:policyNo`,
+`GET /fup/due`, and the policies embedded in `GET /families/:familyCode`. No response shape
+change — same field, now reliably populated.
+
 **New response field — `premiumEndDate`**: returned on `GET /policies` (list items) and
 `GET /policies/:policyNo` (detail). Computed as `issueDate + ppt years` — the date premium
 payments stop (premium paying term end date). `null` if `issueDate` is not set. Existing
@@ -458,12 +464,34 @@ separate requests:
   "todayActivities": [ /* Activity[], see /activities/today */ ],
   "commissionThisMonth": { "month": "2026-06", "totalCommission": 12345.0, ... },
   "unpaidSB": { "total": 3, "preview": [ /* up to 5 SB, see /sb */ ] },
-  "leads": { "total": 7, "preview": [ /* up to 5 Lead, most recent first */ ] }
+  "leads": { "total": 7, "preview": [ /* up to 5 Lead, most recent first */ ] },
+  "lapsingPolicies": { "total": 4, "preview": [ /* up to 5 PolicyListItem due to lapse within 15 days */ ] }
 }
 ```
 
 `total` reflects the full count; `preview` is capped at 5 items — for the full list, call the
-underlying endpoint (`/fup/due`, `/sb?unpaidOnly=true`, `/leads`).
+underlying endpoint (`/fup/due`, `/sb?unpaidOnly=true`, `/leads`, `/policies?lapsingIn=15`).
+
+---
+
+### Global search (auth required)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/search?q=` | searches families, clients, and policies in one call |
+
+`q` is **required**, min 2 chars → `400 query_too_short` if shorter.
+
+```json
+{
+  "families": [ /* up to 10 FamilyListItem — matched by head name or family code */ ],
+  "clients": [ /* up to 10 Client — matched by name or mobile */ ],
+  "policies": [ /* up to 10 PolicyListItem — matched by policy number (partial ok) */ ]
+}
+```
+
+Use this for a single search box instead of separately calling `/families?search=`,
+`/clients/search?q=`, and filtering `/policies`.
 
 ---
 

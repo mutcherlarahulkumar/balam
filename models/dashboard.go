@@ -9,6 +9,13 @@ type DashboardResponse struct {
 	CommissionThisMonth MonthlyCommission `json:"commissionThisMonth"`
 	UnpaidSB            DashboardSB       `json:"unpaidSB"`
 	Leads               DashboardLeads    `json:"leads"`
+	LapsingPolicies     DashboardPolicies `json:"lapsingPolicies"`
+}
+
+// DashboardPolicies summarizes policies lapsing soon: total count plus a short preview.
+type DashboardPolicies struct {
+	Total   int              `json:"total"`
+	Preview []PolicyListItem `json:"preview"`
 }
 
 // DashboardFUP summarizes due/overdue premiums: total count plus a short preview.

@@ -26,6 +26,7 @@ func PrepareRoutes(
 	reportH *handlers.ReportHandler,
 	adminH *handlers.AdminHandler,
 	dashboardH *handlers.DashboardHandler,
+	searchH *handlers.SearchHandler,
 ) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -154,4 +155,7 @@ func PrepareRoutes(
 
 	// Dashboard — aggregated home-screen summary
 	protected.GET("/dashboard", dashboardH.Summary)
+
+	// Global search — families, clients, policies in one call
+	protected.GET("/search", searchH.Search)
 }
