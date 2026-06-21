@@ -23,7 +23,7 @@ func (r *FUPRepo) DuePolicies(year, month string, overdueDays int) ([]models.FUP
 	query := `
 		SELECT p.policy_no, COALESCE(c.name,'') AS client_name,
 		       COALESCE(c.mobileno,'') AS mobile,
-		       COALESCE(p.plan_name,'') AS plan_name,
+		       COALESCE(NULLIF(p.plan_name,''), pl.plan_name, '') AS plan_name,
 		       p.premium, p.next_premium, p.payment_mode,
 		       GREATEST(0, EXTRACT(DAY FROM CURRENT_DATE - p.next_premium)::int) AS days_overdue,
 		       p.next_premium + COALESCE(pl.lapsdays,180) * INTERVAL '1 day' AS lapse_date,
@@ -31,11 +31,17 @@ func (r *FUPRepo) DuePolicies(year, month string, overdueDays int) ([]models.FUP
 		FROM policies p
 		LEFT JOIN client c ON c.familycode=p.familycode AND c.perscode=p.perscode
 		LEFT JOIN plans pl ON pl.plan_no=CAST(p.plan AS TEXT)
-		WHERE p.next_premium <= CURRENT_DATE
-		  AND (p.status IS NULL OR p.status NOT IN ('SU','MA','PU','CL','EX'))`
+		WHERE (p.status IS NULL OR p.status NOT IN ('SU','MA','PU','CL','EX'))`
 
 	args := []interface{}{}
 	n := 1
+
+	// Without a year/month filter, default to due/overdue premiums only (today or earlier).
+	// With a year/month filter, the caller is browsing a specific calendar month, so include
+	// premiums due any time that month regardless of whether it's in the past or future.
+	if year == "" && month == "" {
+		query += ` AND p.next_premium <= CURRENT_DATE`
+	}
 
 	if year != "" {
 		query += fmt.Sprintf(` AND EXTRACT(YEAR FROM p.next_premium) = $%d`, n)

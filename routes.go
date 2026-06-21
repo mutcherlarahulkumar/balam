@@ -25,6 +25,8 @@ func PrepareRoutes(
 	leadH *handlers.LeadHandler,
 	reportH *handlers.ReportHandler,
 	adminH *handlers.AdminHandler,
+	dashboardH *handlers.DashboardHandler,
+	searchH *handlers.SearchHandler,
 ) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -150,4 +152,10 @@ func PrepareRoutes(
 
 	// Agent data import — clears all existing data then imports from INSERT-only SQL file
 	protected.POST("/agent/import", adminH.ResetAndImport)
+
+	// Dashboard — aggregated home-screen summary
+	protected.GET("/dashboard", dashboardH.Summary)
+
+	// Global search — families, clients, policies in one call
+	protected.GET("/search", searchH.Search)
 }

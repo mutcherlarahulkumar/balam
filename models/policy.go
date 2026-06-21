@@ -4,34 +4,35 @@ import "time"
 
 // Policy represents a row in the policies table.
 type Policy struct {
-	ID          int        `db:"_id"          json:"id"`
-	PolicyNo    int        `db:"policy_no"    json:"policyNo"`
-	FamilyCode  string     `db:"familycode"   json:"familyCode"`
-	PersCode    string     `db:"perscode"     json:"persCode"`
-	IssueDate   *time.Time `db:"issue_date"   json:"issueDate"`
-	MatDate     *time.Time `db:"mat_date"     json:"matDate"`
-	PaymentMode string     `db:"payment_mode" json:"paymentMode"`
-	Premium     float64    `db:"premium"      json:"premium"`
-	SumAssured  float64    `db:"sum_assured"  json:"sumAssured"`
-	Plan        int        `db:"plan"         json:"plan"`
-	PlanName    string     `db:"plan_name"    json:"planName"`
-	Term        int        `db:"term"         json:"term"`
-	PPT         int        `db:"ppt"          json:"ppt"`
-	NextPremium *time.Time `db:"next_premium" json:"nextPremium"`
-	MatAmount   float64    `db:"mat_amount"   json:"matAmount"`
-	Nominee     string     `db:"nominee"      json:"nominee"`
-	Relation    string     `db:"relation"     json:"relation"`
-	AgCode      string     `db:"agcode"       json:"agCode"`
-	StatCD      string     `db:"stat_cd"      json:"statCd"`
-	Status      string     `db:"status"       json:"status"`
-	FUPStatus   string     `db:"fupstatus"    json:"fupStatus"`
-	Age         int        `db:"age"          json:"age"`
-	LastPaid    *time.Time `db:"lastpaid"     json:"lastPaid"`
-	NEFT        string     `db:"neft"         json:"neft"`
-	LastFUP     *time.Time `db:"lastfup"      json:"lastFup"`
-	Branch      string     `db:"branch"       json:"branch"`
-	DAB         int        `db:"dab"          json:"dab"`
-	TermRider   int        `db:"termrider"    json:"termRider"`
+	ID             int        `db:"_id"          json:"id"`
+	PolicyNo       int        `db:"policy_no"    json:"policyNo"`
+	FamilyCode     string     `db:"familycode"   json:"familyCode"`
+	PersCode       string     `db:"perscode"     json:"persCode"`
+	IssueDate      *time.Time `db:"issue_date"   json:"issueDate"`
+	MatDate        *time.Time `db:"mat_date"     json:"matDate"`
+	PaymentMode    string     `db:"payment_mode" json:"paymentMode"`
+	Premium        float64    `db:"premium"      json:"premium"`
+	SumAssured     float64    `db:"sum_assured"  json:"sumAssured"`
+	Plan           int        `db:"plan"         json:"plan"`
+	PlanName       string     `db:"plan_name"    json:"planName"`
+	Term           int        `db:"term"         json:"term"`
+	PPT            int        `db:"ppt"          json:"ppt"`
+	PremiumEndDate *time.Time `db:"premium_end_date" json:"premiumEndDate"`
+	NextPremium    *time.Time `db:"next_premium" json:"nextPremium"`
+	MatAmount      float64    `db:"mat_amount"   json:"matAmount"`
+	Nominee        string     `db:"nominee"      json:"nominee"`
+	Relation       string     `db:"relation"     json:"relation"`
+	AgCode         string     `db:"agcode"       json:"agCode"`
+	StatCD         string     `db:"stat_cd"      json:"statCd"`
+	Status         string     `db:"status"       json:"status"`
+	FUPStatus      string     `db:"fupstatus"    json:"fupStatus"`
+	Age            int        `db:"age"          json:"age"`
+	LastPaid       *time.Time `db:"lastpaid"     json:"lastPaid"`
+	NEFT           string     `db:"neft"         json:"neft"`
+	LastFUP        *time.Time `db:"lastfup"      json:"lastFup"`
+	Branch         string     `db:"branch"       json:"branch"`
+	DAB            int        `db:"dab"          json:"dab"`
+	TermRider      int        `db:"termrider"    json:"termRider"`
 }
 
 // PolicyListItem is the compact view returned in GET /policies listing.
@@ -47,6 +48,7 @@ type PolicyListItem struct {
 	Premium        float64    `json:"premium"`
 	SumAssured     float64    `json:"sumAssured"`
 	PaymentMode    string     `json:"paymentMode"`
+	PremiumEndDate *time.Time `json:"premiumEndDate"`
 	NextPremium    *time.Time `json:"nextPremium"`
 	MatDate        *time.Time `json:"matDate"`
 	Status         string     `json:"status"`
@@ -89,7 +91,8 @@ type UpdatePolicyRequest struct {
 // PolicyDetail extends Policy with full history.
 type PolicyDetail struct {
 	Policy
-	FUPHistory []FUPHistory `json:"fupHistory"`
-	Loans      []Loan       `json:"loans"`
-	SBRecords  []SB         `json:"sbRecords"`
+	PlanDetails *PlanResponse `json:"planDetails"`
+	FUPHistory  []FUPHistory  `json:"fupHistory"`
+	Loans       []Loan        `json:"loans"`
+	SBRecords   []SB          `json:"sbRecords"`
 }
