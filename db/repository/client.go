@@ -108,9 +108,13 @@ func (r *ClientRepo) FindByFamilyAndPers(familyCode, persCode string) (*models.C
 // Search searches by name, mobile, or policy_no.
 func (r *ClientRepo) Search(q string) ([]models.Client, error) {
 	rows, err := r.db.Queryx(fmt.Sprintf(`
-		SELECT DISTINCT c.%s FROM client c
-		LEFT JOIN policies p ON p.familycode = c.familycode AND p.perscode = c.perscode
-		WHERE c.name ILIKE $1 OR c.mobileno ILIKE $1 OR CAST(p.policy_no AS TEXT) ILIKE $1
+		SELECT %s FROM client c
+		WHERE c.name ILIKE $1 OR c.mobileno ILIKE $1
+		   OR EXISTS (
+		       SELECT 1 FROM policies p
+		       WHERE p.familycode = c.familycode AND p.perscode = c.perscode
+		         AND CAST(p.policy_no AS TEXT) ILIKE $1
+		   )
 		LIMIT 50`, clientCols), "%"+q+"%")
 	if err != nil {
 		return nil, err
