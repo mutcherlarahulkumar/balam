@@ -21,7 +21,10 @@ func NewCommissionRepo(db *sqlx.DB) *CommissionRepo {
 
 // List returns commission records filtered by year and month.
 func (r *CommissionRepo) List(year, month string) ([]models.Commission, error) {
-	query := `SELECT _id, policy_no, bill_date, first_comm, second_comm, third_comm, bonus_comm, single_comm, sub_comm, paydate
+	query := `SELECT _id, policy_no, bill_date,
+	                 COALESCE(first_comm,0) AS first_comm, COALESCE(second_comm,0) AS second_comm,
+	                 COALESCE(third_comm,0) AS third_comm, COALESCE(bonus_comm,0) AS bonus_comm,
+	                 COALESCE(single_comm,0) AS single_comm, COALESCE(sub_comm,0) AS sub_comm, paydate
 	          FROM commission WHERE 1=1`
 	args := []interface{}{}
 	n := 1

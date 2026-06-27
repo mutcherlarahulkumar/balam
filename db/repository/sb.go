@@ -21,7 +21,7 @@ func NewSBRepo(db *sqlx.DB) *SBRepo {
 
 // List returns SB records, optionally filtered by year, month, and unpaid status.
 func (r *SBRepo) List(year, month string, unpaidOnly bool) ([]models.SB, error) {
-	query := `SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, ch_no, COALESCE(details,'') FROM sb WHERE 1=1`
+	query := `SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, COALESCE(ch_no,''), COALESCE(details,'') FROM sb WHERE 1=1`
 	args := []interface{}{}
 	n := 1
 	if y, err := strconv.Atoi(year); err == nil && y > 0 {
@@ -62,7 +62,7 @@ func (r *SBRepo) List(year, month string, unpaidOnly bool) ([]models.SB, error) 
 
 // ListByPolicy returns all SB records for a specific policy number.
 func (r *SBRepo) ListByPolicy(policyNo int) ([]models.SB, error) {
-	rows, err := r.db.Query(`SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, ch_no, COALESCE(details,'') FROM sb WHERE policy_no=$1 ORDER BY sb_duedate`, policyNo)
+	rows, err := r.db.Query(`SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, COALESCE(ch_no,''), COALESCE(details,'') FROM sb WHERE policy_no=$1 ORDER BY sb_duedate`, policyNo)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (r *SBRepo) MarkPaid(id int, paidDate time.Time, chequeNo string) error {
 // FindByID returns a single SB record.
 func (r *SBRepo) FindByID(id int) (*models.SB, error) {
 	var item models.SB
-	if err := r.db.QueryRow(`SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, ch_no, COALESCE(details,'') FROM sb WHERE _id=$1`, id).
+	if err := r.db.QueryRow(`SELECT _id, policy_no, sb_duedate, sb_amount, i_no, sb_paydate, COALESCE(ch_no,''), COALESCE(details,'') FROM sb WHERE _id=$1`, id).
 		Scan(&item.ID, &item.PolicyNo, &item.SBDueDate, &item.SBAmount, &item.InstalNo, &item.SBPayDate, &item.ChequeNo, &item.Details); err != nil {
 		return nil, err
 	}
