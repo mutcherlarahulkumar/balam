@@ -121,10 +121,56 @@ func (r *FamilyRepo) Create(req models.CreateFamilyRequest) (*models.Family, err
 
 // Update updates editable fields on a family.
 func (r *FamilyRepo) Update(familyCode string, req models.UpdateFamilyRequest) error {
-	_, err := r.db.Exec(`UPDATE family SET headname=$1, address=$2, email=$3, mobileno=$4, pincode=$5, religion=$6, designation=$7, last_update=$8
-	                      WHERE familycode=$9`,
-		req.HeadName, req.Address, req.Email, req.Mobile,
-		req.Pincode, req.Religion, req.Designation, time.Now(), familyCode)
+	sets := []string{}
+	args := []interface{}{}
+	n := 1
+
+	if req.HeadName != "" {
+		sets = append(sets, fmt.Sprintf("headname=$%d", n))
+		args = append(args, req.HeadName)
+		n++
+	}
+	if req.Address != "" {
+		sets = append(sets, fmt.Sprintf("address=$%d", n))
+		args = append(args, req.Address)
+		n++
+	}
+	if req.Email != "" {
+		sets = append(sets, fmt.Sprintf("email=$%d", n))
+		args = append(args, req.Email)
+		n++
+	}
+	if req.Mobile != "" {
+		sets = append(sets, fmt.Sprintf("mobileno=$%d", n))
+		args = append(args, req.Mobile)
+		n++
+	}
+	if req.Pincode != "" {
+		sets = append(sets, fmt.Sprintf("pincode=$%d", n))
+		args = append(args, req.Pincode)
+		n++
+	}
+	if req.Religion != "" {
+		sets = append(sets, fmt.Sprintf("religion=$%d", n))
+		args = append(args, req.Religion)
+		n++
+	}
+	if req.Designation != "" {
+		sets = append(sets, fmt.Sprintf("designation=$%d", n))
+		args = append(args, req.Designation)
+		n++
+	}
+
+	if len(sets) == 0 {
+		return nil
+	}
+
+	sets = append(sets, fmt.Sprintf("last_update=$%d", n))
+	args = append(args, time.Now())
+	n++
+
+	args = append(args, familyCode)
+	_, err := r.db.Exec(fmt.Sprintf("UPDATE family SET %s WHERE familycode=$%d", joinSets(sets), n), args...)
 	return err
 }
 
