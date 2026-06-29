@@ -19,7 +19,7 @@ func NewLoanRepo(db *sqlx.DB) *LoanRepo {
 
 // List returns all loans, optionally filtered by policyNo.
 func (r *LoanRepo) List(policyNo int) ([]models.Loan, error) {
-	query := `SELECT _id, policy_no, ldate, loan, intduedate, loaninterest, COALESCE(details,'') AS details FROM loan`
+	query := `SELECT _id, policy_no, ldate, COALESCE(loan,0) AS loan, intduedate, COALESCE(loaninterest,0) AS loaninterest, COALESCE(details,'') AS details FROM loan`
 	args := []interface{}{}
 	if policyNo > 0 {
 		query += ` WHERE policy_no=$1`

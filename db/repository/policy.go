@@ -66,12 +66,12 @@ func (r *PolicyRepo) List(f ListFilter) ([]models.PolicyListItem, int, error) {
 	offset := (f.Page - 1) * f.Limit
 	args = append(args, f.Limit, offset)
 	query := fmt.Sprintf(`
-		SELECT p._id, p.policy_no, p.familycode,
+		SELECT p._id, p.policy_no, COALESCE(p.familycode,'') AS familycode,
 		       COALESCE(c.name, '') AS client_name,
-		       CAST(p.plan AS TEXT) AS plan_no,
+		       COALESCE(CAST(p.plan AS TEXT),'') AS plan_no,
 		       COALESCE(NULLIF(p.plan_name,''), pl.plan_name, '') AS plan_name,
-		       p.term, p.ppt, p.premium, p.sum_assured,
-		       p.payment_mode,
+		       COALESCE(p.term,0) AS term, COALESCE(p.ppt,0) AS ppt, COALESCE(p.premium,0) AS premium, COALESCE(p.sum_assured,0) AS sum_assured,
+		       COALESCE(p.payment_mode,'') AS payment_mode,
 		       (p.issue_date + (p.ppt || ' years')::interval)::date AS premium_end_date,
 		       p.next_premium, p.mat_date,
 		       COALESCE(p.status,'') AS status,
@@ -110,12 +110,12 @@ func (r *PolicyRepo) List(f ListFilter) ([]models.PolicyListItem, int, error) {
 // SearchByNo returns a light view of policies whose policy number contains q (max 10).
 func (r *PolicyRepo) SearchByNo(q string) ([]models.PolicyListItem, error) {
 	rows, err := r.db.Query(`
-		SELECT p._id, p.policy_no, p.familycode,
+		SELECT p._id, p.policy_no, COALESCE(p.familycode,'') AS familycode,
 		       COALESCE(c.name,'') AS client_name,
-		       CAST(p.plan AS TEXT) AS plan_no,
+		       COALESCE(CAST(p.plan AS TEXT),'') AS plan_no,
 		       COALESCE(NULLIF(p.plan_name,''), pl.plan_name, '') AS plan_name,
-		       p.term, p.ppt, p.premium, p.sum_assured,
-		       p.payment_mode,
+		       COALESCE(p.term,0) AS term, COALESCE(p.ppt,0) AS ppt, COALESCE(p.premium,0) AS premium, COALESCE(p.sum_assured,0) AS sum_assured,
+		       COALESCE(p.payment_mode,'') AS payment_mode,
 		       (p.issue_date + (p.ppt || ' years')::interval)::date AS premium_end_date,
 		       p.next_premium, p.mat_date,
 		       COALESCE(p.status,'') AS status,
@@ -156,7 +156,7 @@ func (r *PolicyRepo) FindByNo(policyNo int) (*models.Policy, error) {
 	                 COALESCE(p.familycode,'')   AS familycode,
 	                 COALESCE(p.perscode,'')     AS perscode,
 	                 p.issue_date, p.mat_date,
-	                 COALESCE(p.payment_mode,'') AS payment_mode,
+	                 COALESCE(p.payment_mode,'')   AS payment_mode,
 	                 COALESCE(p.premium,0)       AS premium,
 	                 COALESCE(p.sum_assured,0)   AS sum_assured,
 	                 COALESCE(p.plan,0)          AS plan,
@@ -257,11 +257,11 @@ func (r *PolicyRepo) Update(policyNo int, req models.UpdatePolicyRequest, nextPr
 // PoliciesByFamilyCode returns a light view of policies for a family.
 func (r *PolicyRepo) PoliciesByFamilyCode(familyCode string) ([]models.PolicyListItem, error) {
 	rows, err := r.db.Query(`
-		SELECT p._id, p.policy_no, p.familycode,
+		SELECT p._id, p.policy_no, COALESCE(p.familycode,'') AS familycode,
 		       COALESCE(c.name,'') AS client_name,
-		       CAST(p.plan AS TEXT), COALESCE(NULLIF(p.plan_name,''), pl.plan_name, ''),
-		       p.term, p.ppt, p.premium, p.sum_assured,
-		       p.payment_mode,
+		       COALESCE(CAST(p.plan AS TEXT),''), COALESCE(NULLIF(p.plan_name,''), pl.plan_name, ''),
+		       COALESCE(p.term,0) AS term, COALESCE(p.ppt,0) AS ppt, COALESCE(p.premium,0) AS premium, COALESCE(p.sum_assured,0) AS sum_assured,
+		       COALESCE(p.payment_mode,'') AS payment_mode,
 		       (p.issue_date + (p.ppt || ' years')::interval)::date,
 		       p.next_premium, p.mat_date,
 		       COALESCE(p.status,''), COALESCE(p.fupstatus,''),

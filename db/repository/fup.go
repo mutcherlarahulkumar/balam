@@ -24,7 +24,7 @@ func (r *FUPRepo) DuePolicies(year, month string, overdueDays int) ([]models.FUP
 		SELECT p.policy_no, COALESCE(c.name,'') AS client_name,
 		       COALESCE(c.mobileno,'') AS mobile,
 		       COALESCE(NULLIF(p.plan_name,''), pl.plan_name, '') AS plan_name,
-		       p.premium, p.next_premium, p.payment_mode,
+		       COALESCE(p.premium,0) AS premium, p.next_premium, COALESCE(p.payment_mode,'') AS payment_mode,
 		       GREATEST(0, EXTRACT(DAY FROM CURRENT_DATE - p.next_premium)::int) AS days_overdue,
 		       p.next_premium + COALESCE(pl.lapsdays,180) * INTERVAL '1 day' AS lapse_date,
 		       GREATEST(0, EXTRACT(DAY FROM (p.next_premium + COALESCE(pl.lapsdays,180) * INTERVAL '1 day') - CURRENT_DATE)::int) AS days_until_lapse
@@ -117,7 +117,7 @@ func (r *FUPRepo) UpdateFUP(policyNo int, oldFUP, newFUP time.Time, updatedBy, f
 // History returns all FUP changes for a policy, newest first.
 func (r *FUPRepo) History(policyNo int) ([]models.FUPHistory, error) {
 	var items []models.FUPHistory
-	err := r.db.Select(&items, `SELECT _id, policy_no, oldfup, newfup, name, dateupdated
+	err := r.db.Select(&items, `SELECT _id, policy_no, oldfup, newfup, COALESCE(name,'') AS name, dateupdated
 	                              FROM fuphistory WHERE policy_no=$1 ORDER BY dateupdated DESC`, policyNo)
 	if items == nil {
 		items = []models.FUPHistory{}
@@ -128,7 +128,7 @@ func (r *FUPRepo) History(policyNo int) ([]models.FUPHistory, error) {
 // MultipleDues returns all instalment arrear rows for a policy.
 func (r *FUPRepo) MultipleDues(policyNo int) ([]models.MultipleDue, error) {
 	var items []models.MultipleDue
-	err := r.db.Select(&items, `SELECT _id, policy_no, duedate, inst_no, int_amt, valid_upto, total_amt
+	err := r.db.Select(&items, `SELECT _id, policy_no, duedate, COALESCE(inst_no,0) AS inst_no, COALESCE(int_amt,0) AS int_amt, valid_upto, COALESCE(total_amt,0) AS total_amt
 	                              FROM multipledue WHERE policy_no=$1 ORDER BY duedate`, policyNo)
 	if items == nil {
 		items = []models.MultipleDue{}

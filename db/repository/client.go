@@ -108,9 +108,13 @@ func (r *ClientRepo) FindByFamilyAndPers(familyCode, persCode string) (*models.C
 // Search searches by name, mobile, or policy_no.
 func (r *ClientRepo) Search(q string) ([]models.Client, error) {
 	rows, err := r.db.Queryx(fmt.Sprintf(`
-		SELECT DISTINCT c.%s FROM client c
-		LEFT JOIN policies p ON p.familycode = c.familycode AND p.perscode = c.perscode
-		WHERE c.name ILIKE $1 OR c.mobileno ILIKE $1 OR CAST(p.policy_no AS TEXT) ILIKE $1
+		SELECT %s FROM client c
+		WHERE c.name ILIKE $1 OR c.mobileno ILIKE $1
+		   OR EXISTS (
+		       SELECT 1 FROM policies p
+		       WHERE p.familycode = c.familycode AND p.perscode = c.perscode
+		         AND CAST(p.policy_no AS TEXT) ILIKE $1
+		   )
 		LIMIT 50`, clientCols), "%"+q+"%")
 	if err != nil {
 		return nil, err
@@ -146,11 +150,62 @@ func (r *ClientRepo) Create(req models.CreateClientRequest, dob *time.Time, age 
 	return r.FindByID(id)
 }
 
-// Update updates client fields.
+// Update updates client fields. Only fields present in req (and a non-nil dob) are changed.
 func (r *ClientRepo) Update(id int, req models.UpdateClientRequest, dob *time.Time, age int) error {
-	_, err := r.db.Exec(`UPDATE client SET name=$1, mobileno=$2, email=$3, sex=$4, address=$5, occupation=$6, client_type=$7, dob_r=$8, age=$9
-	                      WHERE _id=$10`,
-		req.Name, req.Mobile, req.Email, req.Sex, req.Address, req.Occupation, req.ClientType, dob, age, id)
+	sets := []string{}
+	args := []interface{}{}
+	n := 1
+
+	if req.Name != "" {
+		sets = append(sets, fmt.Sprintf("name=$%d", n))
+		args = append(args, req.Name)
+		n++
+	}
+	if req.Mobile != "" {
+		sets = append(sets, fmt.Sprintf("mobileno=$%d", n))
+		args = append(args, req.Mobile)
+		n++
+	}
+	if req.Email != "" {
+		sets = append(sets, fmt.Sprintf("email=$%d", n))
+		args = append(args, req.Email)
+		n++
+	}
+	if req.Sex != "" {
+		sets = append(sets, fmt.Sprintf("sex=$%d", n))
+		args = append(args, req.Sex)
+		n++
+	}
+	if req.Address != "" {
+		sets = append(sets, fmt.Sprintf("address=$%d", n))
+		args = append(args, req.Address)
+		n++
+	}
+	if req.Occupation != "" {
+		sets = append(sets, fmt.Sprintf("occupation=$%d", n))
+		args = append(args, req.Occupation)
+		n++
+	}
+	if req.ClientType != "" {
+		sets = append(sets, fmt.Sprintf("client_type=$%d", n))
+		args = append(args, req.ClientType)
+		n++
+	}
+	if dob != nil {
+		sets = append(sets, fmt.Sprintf("dob_r=$%d", n))
+		args = append(args, dob)
+		n++
+		sets = append(sets, fmt.Sprintf("age=$%d", n))
+		args = append(args, age)
+		n++
+	}
+
+	if len(sets) == 0 {
+		return nil
+	}
+
+	args = append(args, id)
+	_, err := r.db.Exec(fmt.Sprintf("UPDATE client SET %s WHERE _id=$%d", joinSets(sets), n), args...)
 	return err
 }
 

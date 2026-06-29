@@ -19,7 +19,7 @@ func NewReportRepo(db *sqlx.DB) *ReportRepo {
 // Cashflow returns cached cashflow rows for a family.
 func (r *ReportRepo) Cashflow(familyCode string) ([]models.ReportCashflow, error) {
 	var items []models.ReportCashflow
-	err := r.db.Select(&items, `SELECT familycode, perscode, policy_no, TO_CHAR(due_date,'YYYY-MM-DD'), name, age, sb_amount, bonus, total, type
+	err := r.db.Select(&items, `SELECT familycode, perscode, policy_no, TO_CHAR(due_date,'YYYY-MM-DD') AS due_date, name, age, sb_amount, bonus, total, type
 	                              FROM rpt_cashflow WHERE familycode=$1 ORDER BY due_date`, familyCode)
 	if items == nil {
 		items = []models.ReportCashflow{}
@@ -40,7 +40,7 @@ func (r *ReportRepo) CashInOut() ([]models.ReportCashInOut, error) {
 // CurrentStatus returns the current status snapshot for a family.
 func (r *ReportRepo) CurrentStatus(familyCode string) ([]models.ReportCurrentStatus, error) {
 	var items []models.ReportCurrentStatus
-	err := r.db.Select(&items, `SELECT familycode, perscode, policy_no, due_status, premium_paid, vested_bonus, surr_value, loan_taken, COALESCE(loan_date,''), COALESCE(loan_amt,0)
+	err := r.db.Select(&items, `SELECT familycode, perscode, policy_no, due_status, premium_paid, vested_bonus, surr_value, loan_taken, COALESCE(loan_date,'') AS loan_date, COALESCE(loan_amt,0) AS loan_amt
 	                              FROM rpt_currstatus WHERE familycode=$1`, familyCode)
 	if items == nil {
 		items = []models.ReportCurrentStatus{}

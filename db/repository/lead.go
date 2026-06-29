@@ -20,7 +20,7 @@ func NewLeadRepo(db *sqlx.DB) *LeadRepo {
 // ListLeads returns all leads.
 func (r *LeadRepo) ListLeads() ([]models.Lead, error) {
 	var items []models.Lead
-	err := r.db.Select(&items, `SELECT _id, COALESCE(lead_id,''), COALESCE(search_term,''), name, mobile, COALESCE(address,''), COALESCE(status,0), date_added FROM leaddata ORDER BY date_added DESC`)
+	err := r.db.Select(&items, `SELECT _id, COALESCE(lead_id,'') AS lead_id, COALESCE(search_term,'') AS search_term, name, mobile, COALESCE(address,'') AS address, COALESCE(status,0) AS status, date_added FROM leaddata ORDER BY date_added DESC`)
 	if items == nil {
 		items = []models.Lead{}
 	}
