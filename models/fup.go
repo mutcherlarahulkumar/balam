@@ -39,7 +39,7 @@ type MultipleDue struct {
 
 // UpdateFUPRequest holds data for POST /fup/update.
 type UpdateFUPRequest struct {
-	PolicyNo int    `json:"policyNo" binding:"required"`
+	PolicyNo int    `json:"policyNo" binding:"required,gt=0"`
 	OldFUP   string `json:"oldFup"   binding:"required"`
 	NewFUP   string `json:"newFup"   binding:"required"`
 	Reason   string `json:"reason"   binding:"omitempty,max=500"`

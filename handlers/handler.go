@@ -91,6 +91,8 @@ func friendlyMsg(fe validator.FieldError) string {
 		return fmt.Sprintf("%s must be exactly %s characters.", field, param)
 	case "numeric":
 		return fmt.Sprintf("%s must contain digits only.", field)
+	case "alphanum":
+		return fmt.Sprintf("%s must contain only letters and digits.", field)
 	case "oneof":
 		return fmt.Sprintf("%s must be one of: %s.", field, strings.ReplaceAll(param, " ", ", "))
 	case "gt":

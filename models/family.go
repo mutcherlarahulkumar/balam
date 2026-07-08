@@ -33,9 +33,9 @@ type CreateFamilyRequest struct {
 	FamilyCode  string `json:"familyCode"  binding:"omitempty,max=15"`
 	HeadName    string `json:"headName"    binding:"required,min=2,max=80"`
 	Address     string `json:"address"     binding:"omitempty,max=250"`
-	Mobile      string `json:"mobile"      binding:"omitempty,min=10,max=15"`
+	Mobile      string `json:"mobile"      binding:"omitempty,numeric,min=10,max=15"`
 	Email       string `json:"email"       binding:"omitempty,email"`
-	Pincode     string `json:"pincode"     binding:"omitempty,max=10"`
+	Pincode     string `json:"pincode"     binding:"omitempty,len=6,numeric"`
 	Religion    string `json:"religion"    binding:"omitempty,max=20"`
 	Designation string `json:"designation" binding:"omitempty,max=80"`
 }
@@ -44,9 +44,9 @@ type CreateFamilyRequest struct {
 type UpdateFamilyRequest struct {
 	HeadName    string `json:"headName"    binding:"omitempty,min=2,max=80"`
 	Address     string `json:"address"     binding:"omitempty,max=250"`
-	Mobile      string `json:"mobile"      binding:"omitempty,min=10,max=15"`
+	Mobile      string `json:"mobile"      binding:"omitempty,numeric,min=10,max=15"`
 	Email       string `json:"email"       binding:"omitempty,email"`
-	Pincode     string `json:"pincode"     binding:"omitempty,max=10"`
+	Pincode     string `json:"pincode"     binding:"omitempty,len=6,numeric"`
 	Religion    string `json:"religion"    binding:"omitempty,max=20"`
 	Designation string `json:"designation" binding:"omitempty,max=80"`
 }

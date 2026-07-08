@@ -70,6 +70,7 @@ func PrepareRoutes(
 		clients.GET("/search", clientH.Search)
 		clients.GET("/:id", clientH.Get)
 		clients.PUT("/:id", clientH.Update)
+		clients.POST("/:id/bank-details", clientH.AddBankDetail)
 	}
 
 	// Plans

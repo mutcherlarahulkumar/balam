@@ -17,7 +17,7 @@ type Lead struct {
 // CreateLeadRequest holds data for POST /leads.
 type CreateLeadRequest struct {
 	Name       string `json:"name"       binding:"required,min=2,max=150"`
-	Mobile     string `json:"mobile"     binding:"required,min=10,max=15"`
+	Mobile     string `json:"mobile"     binding:"required,numeric,min=10,max=15"`
 	Address    string `json:"address"    binding:"omitempty,max=500"`
 	SearchTerm string `json:"searchTerm" binding:"omitempty,max=100"`
 }
@@ -37,7 +37,7 @@ type Activity struct {
 
 // CreateActivityRequest holds data for POST /activities.
 type CreateActivityRequest struct {
-	ClientID     int    `json:"clientId"      binding:"required"`
+	ClientID     int    `json:"clientId"      binding:"required,gt=0"`
 	ActivityType string `json:"activityType"  binding:"required,oneof=CALL MEETING DEMO EMAIL PROPOSAL MEDICAL REMINDER"`
 	ActivityDate string `json:"activityDate"  binding:"required"`
 	ActivityTime string `json:"activityTime"  binding:"omitempty"`

@@ -60,6 +60,15 @@ func (s *ClientService) GetByID(id int) (*models.ClientDetail, error) {
 	}, nil
 }
 
+// AddBankDetail validates the client and stores a bank record (Aadhaar/PAN/CKYC encrypted at rest).
+func (s *ClientService) AddBankDetail(clientID int, req models.CreateBankDetailRequest) (*models.BankDetail, error) {
+	client, err := s.clientRepo.FindByID(clientID)
+	if err != nil {
+		return nil, errors.New("client_not_found")
+	}
+	return s.clientRepo.CreateBankDetail(clientID, req, client.FamilyCode, client.PersCode)
+}
+
 // Search searches clients by name, mobile, or policy number.
 func (s *ClientService) Search(q string) ([]models.Client, error) {
 	if q == "" {
@@ -80,6 +89,9 @@ func (s *ClientService) Create(req models.CreateClientRequest) (*models.Client, 
 		parsed, err := time.Parse("2006-01-02", req.DOB)
 		if err != nil {
 			return nil, errors.New("invalid_dob_format: use YYYY-MM-DD")
+		}
+		if !parsed.Before(time.Now()) {
+			return nil, errors.New("dob_must_be_in_past")
 		}
 		dob = &parsed
 		age = calculateAge(parsed)
@@ -104,6 +116,9 @@ func (s *ClientService) Update(id int, req models.UpdateClientRequest) (*models.
 		parsed, err := time.Parse("2006-01-02", req.DOB)
 		if err != nil {
 			return nil, errors.New("invalid_dob_format: use YYYY-MM-DD")
+		}
+		if !parsed.Before(time.Now()) {
+			return nil, errors.New("dob_must_be_in_past")
 		}
 		dob = &parsed
 		age = calculateAge(parsed)

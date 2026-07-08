@@ -80,6 +80,8 @@ func (h *ClientHandler) Create(c *gin.Context) {
 		switch err.Error() {
 		case "family_not_found":
 			respondError(c, http.StatusNotFound, "family_not_found", "Family not found")
+		case "dob_must_be_in_past":
+			respondError(c, http.StatusUnprocessableEntity, "dob_must_be_in_past", "Date of birth must be in the past")
 		default:
 			respondError(c, http.StatusBadRequest, "create_failed", err.Error())
 		}
@@ -107,10 +109,39 @@ func (h *ClientHandler) Update(c *gin.Context) {
 		switch err.Error() {
 		case "client_not_found":
 			respondError(c, http.StatusNotFound, "client_not_found", "Client not found")
+		case "dob_must_be_in_past":
+			respondError(c, http.StatusUnprocessableEntity, "dob_must_be_in_past", "Date of birth must be in the past")
 		default:
 			respondError(c, http.StatusBadRequest, "update_failed", err.Error())
 		}
 		return
 	}
 	respond(c, http.StatusOK, client)
+}
+
+// AddBankDetail handles POST /clients/:id/bank-details.
+func (h *ClientHandler) AddBankDetail(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid_id", "Client ID must be an integer")
+		return
+	}
+
+	var req models.CreateBankDetailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondValidation(c, err)
+		return
+	}
+
+	detail, err := h.svc.AddBankDetail(id, req)
+	if err != nil {
+		switch err.Error() {
+		case "client_not_found":
+			respondError(c, http.StatusNotFound, "client_not_found", "Client not found")
+		default:
+			respondError(c, http.StatusBadRequest, "create_failed", err.Error())
+		}
+		return
+	}
+	respond(c, http.StatusCreated, detail)
 }

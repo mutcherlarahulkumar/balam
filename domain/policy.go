@@ -124,6 +124,12 @@ func (s *PolicyService) Create(req models.CreatePolicyRequest) error {
 	if err != nil {
 		return errors.New("invalid_next_premium")
 	}
+	if !matDate.After(issueDate) {
+		return errors.New("mat_date_before_issue_date")
+	}
+	if nextPremium.Before(issueDate) {
+		return errors.New("next_premium_before_issue_date")
+	}
 
 	// Compute age from client DOB at issue date
 	age := 0

@@ -83,7 +83,7 @@ type ChangePasswordRequest struct {
 // UpdateProfileRequest holds editable profile fields for PUT /agent/profile.
 type UpdateProfileRequest struct {
 	Name    string `json:"name"    binding:"omitempty,min=2,max=80"`
-	Mobile  string `json:"mobile"  binding:"omitempty,min=10,max=15"`
+	Mobile  string `json:"mobile"  binding:"omitempty,numeric,min=10,max=15"`
 	Email   string `json:"email"   binding:"omitempty,email"`
 	Photo   string `json:"photo"   binding:"omitempty"`
 	Slogan  string `json:"slogan"  binding:"omitempty,max=200"`

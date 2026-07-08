@@ -42,6 +42,9 @@ func (s *FUPService) UpdateFUP(req models.UpdateFUPRequest, agentName string) er
 		return errors.New("invalid_new_fup: use YYYY-MM-DD")
 	}
 
+	if !newFUP.After(oldFUP) {
+		return errors.New("new_fup_not_after_old_fup")
+	}
 	if policy.NextPremium != nil && !policy.NextPremium.Truncate(24*time.Hour).Equal(oldFUP.Truncate(24*time.Hour)) {
 		return errors.New("old_fup_mismatch")
 	}

@@ -58,7 +58,7 @@ type PolicyListItem struct {
 
 // CreatePolicyRequest holds data for POST /policies.
 type CreatePolicyRequest struct {
-	PolicyNo    int     `json:"policyNo"    binding:"required"`
+	PolicyNo    int     `json:"policyNo"    binding:"required,gt=0"`
 	FamilyCode  string  `json:"familyCode"  binding:"required"`
 	PersCode    string  `json:"persCode"    binding:"required"`
 	PlanNo      string  `json:"planNo"      binding:"required"`
@@ -85,7 +85,7 @@ type UpdatePolicyRequest struct {
 	Relation    string `json:"relation"    binding:"omitempty,max=20"`
 	NEFT        string `json:"neft"        binding:"omitempty,oneof=YES NO"`
 	NextPremium string `json:"nextPremium" binding:"omitempty"`
-	FUPStatus   string `json:"fupStatus"   binding:"omitempty"`
+	FUPStatus   string `json:"fupStatus"   binding:"omitempty,oneof=DUE PAID OVERDUE LAPSED"`
 }
 
 // PolicyDetail extends Policy with full history.

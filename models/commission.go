@@ -18,7 +18,7 @@ type Commission struct {
 
 // CreateCommissionRequest holds data for POST /commission.
 type CreateCommissionRequest struct {
-	PolicyNo   int     `json:"policyNo"   binding:"required"`
+	PolicyNo   int     `json:"policyNo"   binding:"required,gt=0"`
 	BillDate   string  `json:"billDate"   binding:"required"`
 	FirstComm  float64 `json:"firstComm"  binding:"omitempty,min=0"`
 	SecondComm float64 `json:"secondComm" binding:"omitempty,min=0"`

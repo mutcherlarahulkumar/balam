@@ -36,5 +36,8 @@ func (s *LoanService) Create(req models.CreateLoanRequest) error {
 	if err != nil {
 		return errors.New("invalid_interest_due_date")
 	}
+	if intDueDate.Before(loanDate) {
+		return errors.New("interest_due_before_loan_date")
+	}
 	return s.loanRepo.Create(req, loanDate, intDueDate)
 }

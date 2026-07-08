@@ -29,7 +29,7 @@ type CreateClientRequest struct {
 	Name       string `json:"name"       binding:"required,min=2,max=80"`
 	DOB        string `json:"dob"        binding:"omitempty"`
 	Sex        string `json:"sex"        binding:"omitempty,oneof=M F O"`
-	Mobile     string `json:"mobile"     binding:"omitempty,min=10,max=15"`
+	Mobile     string `json:"mobile"     binding:"omitempty,numeric,min=10,max=15"`
 	Email      string `json:"email"      binding:"omitempty,email"`
 	Occupation string `json:"occupation" binding:"omitempty,max=50"`
 	ClientType string `json:"clientType" binding:"omitempty,oneof=C P N"`
@@ -41,7 +41,7 @@ type UpdateClientRequest struct {
 	Name       string `json:"name"       binding:"omitempty,min=2,max=80"`
 	DOB        string `json:"dob"        binding:"omitempty"`
 	Sex        string `json:"sex"        binding:"omitempty,oneof=M F O"`
-	Mobile     string `json:"mobile"     binding:"omitempty,min=10,max=15"`
+	Mobile     string `json:"mobile"     binding:"omitempty,numeric,min=10,max=15"`
 	Email      string `json:"email"      binding:"omitempty,email"`
 	Occupation string `json:"occupation" binding:"omitempty,max=50"`
 	ClientType string `json:"clientType" binding:"omitempty,oneof=C P N"`
@@ -81,8 +81,8 @@ type CreateBankDetailRequest struct {
 	AccountNumber string `json:"accountNumber" binding:"required,max=50"`
 	IFSECode      string `json:"ifseCode"      binding:"omitempty,max=20"`
 	MICRCode      string `json:"micrCode"      binding:"omitempty,max=30"`
-	Aadhar        string `json:"aadhar"        binding:"omitempty,max=15"`
-	PAN           string `json:"pan"           binding:"omitempty,max=10"`
+	Aadhar        string `json:"aadhar"        binding:"omitempty,len=12,numeric"`
+	PAN           string `json:"pan"           binding:"omitempty,len=10,alphanum"`
 	CKYC          string `json:"ckyc"          binding:"omitempty,max=50"`
 }
 
