@@ -40,6 +40,8 @@ func (h *LoanHandler) Create(c *gin.Context) {
 		switch err.Error() {
 		case "policy_not_found":
 			respondError(c, http.StatusNotFound, "policy_not_found", "Policy not found")
+		case "interest_due_before_loan_date":
+			respondError(c, http.StatusUnprocessableEntity, "interest_due_before_loan_date", "Interest due date cannot be earlier than the loan date")
 		default:
 			respondError(c, http.StatusBadRequest, "create_failed", err.Error())
 		}

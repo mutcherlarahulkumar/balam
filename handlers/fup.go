@@ -52,6 +52,8 @@ func (h *FUPHandler) Update(c *gin.Context) {
 		switch err.Error() {
 		case "policy_not_found":
 			respondError(c, http.StatusNotFound, "policy_not_found", "Policy not found")
+		case "new_fup_not_after_old_fup":
+			respondError(c, http.StatusUnprocessableEntity, "new_fup_not_after_old_fup", "New FUP date must be later than the old FUP date")
 		case "old_fup_mismatch":
 			respondError(c, http.StatusUnprocessableEntity, "fup_mismatch", "Provided oldFup does not match the current next premium on the policy")
 		default:

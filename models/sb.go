@@ -16,7 +16,7 @@ type SB struct {
 
 // CreateSBRequest holds data for POST /sb.
 type CreateSBRequest struct {
-	PolicyNo    int     `json:"policyNo"     binding:"required"`
+	PolicyNo    int     `json:"policyNo"     binding:"required,gt=0"`
 	SBDueDate   string  `json:"sbDueDate"    binding:"required"`
 	SBAmount    float64 `json:"sbAmount"     binding:"required,gt=0"`
 	InstalmentNo int    `json:"instalmentNo" binding:"required,min=1"`

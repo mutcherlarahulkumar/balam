@@ -67,6 +67,10 @@ func (h *PolicyHandler) Create(c *gin.Context) {
 			respondError(c, http.StatusConflict, "policy_no_conflict", "A policy with this number already exists")
 		case "plan_not_found":
 			respondError(c, http.StatusBadRequest, "plan_not_found", "Plan not found")
+		case "mat_date_before_issue_date":
+			respondError(c, http.StatusUnprocessableEntity, "mat_date_before_issue_date", "Maturity date must be after the issue date")
+		case "next_premium_before_issue_date":
+			respondError(c, http.StatusUnprocessableEntity, "next_premium_before_issue_date", "Next premium date cannot be earlier than the issue date")
 		default:
 			respondError(c, http.StatusBadRequest, "create_failed", err.Error())
 		}
